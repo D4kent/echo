@@ -917,8 +917,14 @@ $(".marque")?.addEventListener("mouseenter", (e) => {
     const f = document.createElement("div"); f.className = "fantome";
     f.appendChild(logo.cloneNode(true));
     f.style.setProperty("--dx", dx + "px"); f.style.setProperty("--s", sc);
-    f.style.animation = `echo-copie .55s ${d}ms cubic-bezier(.2,.7,.3,1) both, echo-retour .5s ${520 + d / 2}ms cubic-bezier(.4,0,.3,1) both`;
+    f.style.animation = `echo-copie .55s ${d}ms cubic-bezier(.2,.7,.3,1) both`;
     m.appendChild(f); copies.push(f);
   });
-  setTimeout(() => { copies.forEach((f) => f.remove()); m.classList.remove("echo"); }, 1750);
+  // Goutte d'eau : des ondes partent du centre au moment où le logo réapparaît
+  [0, 140, 280].forEach((d) => {
+    const r = document.createElement("i"); r.className = "ronde";
+    r.style.animationDelay = 760 + d + "ms";
+    m.appendChild(r); copies.push(r);
+  });
+  setTimeout(() => { copies.forEach((f) => f.remove()); m.classList.remove("echo"); }, 1950);
 });
