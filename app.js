@@ -26,7 +26,7 @@ const CATALOGUE = [
 const THEMES_PODCASTS = [
   ["Tendances", null], ["Humour", 1303], ["Actualités", 1489], ["Société & culture", 1324], ["Histoire", 1487],
   ["True crime", 1488], ["Musique", 1310], ["Fiction", 1483], ["Sciences", 1533], ["Éducation", 1304],
-  ["Santé & bien-être", 1512], ["Business", 1321], ["Technologie", 1318], ["Sport", 1545], ["Arts", 1301],
+  ["Santé & bien-être", 1512], ["Business", 1321], ["Technologie", 1318], ["Jeux vidéo", 1509], ["Sport", 1545], ["Arts", 1301],
   ["Cinéma & séries", 1309], ["Loisirs", 1502], ["Enfants & famille", 1305],
 ];
 
