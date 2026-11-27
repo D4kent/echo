@@ -199,15 +199,37 @@ $("#grille-radios").addEventListener("click", (e) => {
 
 // ───── Titre en cours ─────
 // On interroge les sites des radios ; quand un site refuse les navigateurs, on passe par un relais public.
-const RELAIS = (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u);
-async function lireJson(url) {
-  try { return await json(url, 6000); } catch { return await json(RELAIS(url), 8000); }
-}
+// Plusieurs relais publics : on retient, pour chaque site, le chemin qui a marché la dernière fois.
+const RELAIS = [
+  (u) => u,
+  (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+  (u) => "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u),
+  (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
+];
+const routeHote = {};
+const memoire = {}; // réponses récentes partagées entre vignettes (ex. le fichier Nova commun)
 async function lireTexte(url) {
-  const essai = async (u) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 7000);
-    try { const r = await fetch(u, { signal: c.signal }); if (!r.ok) throw new Error(r.status); return await r.text(); } finally { clearTimeout(t); } };
-  try { return await essai(url); } catch { return await essai(RELAIS(url)); }
+  const m = memoire[url]; if (m && Date.now() - m.t < 4000) return m.p;
+  const hote = new URL(url).host;
+  const ordre = [...RELAIS.keys()]; const pref = routeHote[hote];
+  if (pref != null) { ordre.splice(ordre.indexOf(pref), 1); ordre.unshift(pref); }
+  const p = (async () => {
+    let err;
+    for (const i of ordre) {
+      const c = new AbortController(); const t = setTimeout(() => c.abort(), i === 0 ? 5000 : 8000);
+      try {
+        const r = await fetch(RELAIS[i](url), { signal: c.signal, cache: "no-store" });
+        if (!r.ok) throw new Error(r.status);
+        const txt = await r.text(); routeHote[hote] = i; return txt;
+      } catch (e) { err = e; } finally { clearTimeout(t); }
+    }
+    throw err;
+  })();
+  memoire[url] = { t: Date.now(), p }; p.catch(() => delete memoire[url]);
+  return p;
 }
+const lireJson = async (url) => JSON.parse(await lireTexte(url));
+const sansAccent = (x) => String(x || "").normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 function metaDe(s) {
   if (s.meta && Object.keys(s.meta).length) return s.meta;
   const p = String(s.metaTexte || "").split(":");
@@ -216,7 +238,25 @@ function metaDe(s) {
   if (p[0] === "nrj") return { nrj: +p[1] };
   if (p[0] === "oui") return { oui: p[1] };
   if (p[0] === "lag") return { lag: [p[1], +p[2] || 1] };
-  return { icy: true };
+  return officielParNom(s) || { icy: true };
+}
+// Radios ajoutées depuis l'annuaire : on reconnaît les grandes radios par leur nom ou leur flux (comme sur le téléphone)
+const OUI_HOTES = {"ouifm.ice.infomaniak.ch":"2174546520932614531","ouifm3.ice.infomaniak.ch":"3134161803443976427","ouifm5.ice.infomaniak.ch":"3134161803443976526","ouifm2.ice.infomaniak.ch":"3134161803443976382","ouifmtopoftheweek.ice.infomaniak.ch":"3754485939764896014","ouifmgaragerock.ice.infomaniak.ch":"1016696403088961793","ouifmgirlsrock.ice.infomaniak.ch":"3864441174941011218","ouifmrockfrancais.ice.infomaniak.ch":"3820775684199026845","ouifmbluesnrock.ice.infomaniak.ch":"3134161803443976485","ouifmbringthenoise.ice.infomaniak.ch":"4004502594738215513","ouifmsummertime.ice.infomaniak.ch":"3652031559378160590","ouifmacoustic.ice.infomaniak.ch":"3906034555622012146","ouifmwoodstock.ice.infomaniak.ch":"3707948669989820452","ouifmlesslowsdurock.ice.infomaniak.ch":"3818508936105954443","ouifmganja.ice.infomaniak.ch":"3540892623380233022","ouifmrock60s.ice.infomaniak.ch":"3540892623380233039","ouifmrock70s.ice.infomaniak.ch":"3540892623380233057","ouifmrock80s.ice.infomaniak.ch":"3610476513821993259","ouifmrock90s.ice.infomaniak.ch":"3610476513821993340","ouifmrock2000s.ice.infomaniak.ch":"3652031559378160547","ouifmrocknfood.ice.infomaniak.ch":"3796007387461058949"};
+const OFFICIELS = {
+  franceinter: { rf: 1 }, franceinfo: { rf: 2 }, francemusique: { rf: 4 }, franceculture: { rf: 5 }, mouv: { rf: 6 }, fip: { rf: 7 },
+  nostalgie: { nrj: 197 }, nrj: { nrj: 158 }, cheriefm: { nrj: 190 }, cherie: { nrj: 190 }, rireetchansons: { nrj: 200 }, rirechansons: { nrj: 200 },
+  europe2: { lag: ["www.europe2.fr", 1] }, rfm: { lag: ["www.rfm.fr", 1] }, ouifm: { oui: "2174546520932614531" },
+};
+const EXTRAS = ["classics", "classic", "hits", "new", "80", "90", "2000", "best", "love", "rock", "dance", "jazz", "pop", "hiphop", "reggae", "soul", "nuit", "nouvelle", "chill", "latino", "rap"];
+function officielParNom(s) {
+  for (const f of s.flux || []) { try { const id = OUI_HOTES[new URL(f).host]; if (id) return { oui: id }; } catch {} }
+  const mots = String(s.nom || "").normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  if (mots.includes("nova") || mots.includes("novazz")) return { nova: "?" + s.nom };
+  const m = mots[0] === "radio" ? mots.slice(1) : mots;
+  let trouve = null, n = 0, debut = "";
+  m.slice(0, 4).forEach((w, i) => { debut += w; if (OFFICIELS[debut]) { trouve = OFFICIELS[debut]; n = i + 1; } });
+  if (trouve && m.slice(n).some((w) => EXTRAS.includes(w) && !(w === "rock" && trouve.oui))) return null;
+  return trouve;
 }
 const INUTILES = ["publicit", "advert", "jingle", "en direct", "live stream", "unknown", "inconnu", "now playing", "info goes here", "untitled", "no title"];
 const utile = (t) => t && t.titre && !INUTILES.some((x) => (t.titre + " " + t.artiste).toLowerCase().includes(x)) && !/^\d+$/.test(t.titre);
@@ -224,7 +264,7 @@ async function titreIcecast(flux) {
   for (const u of flux) {
     try {
       const url = new URL(u);
-      const d = JSON.parse(await lireTexte(url.origin + "/status-json.xsl"));
+      const d = await lireJson(url.origin + "/status-json.xsl");
       let src = d.icestats?.source; if (!src) continue;
       if (!Array.isArray(src)) src = [src];
       const s = src.find((x) => String(x.listenurl || "").endsWith(url.pathname)) || (src.length === 1 ? src[0] : null);
@@ -246,7 +286,10 @@ async function titreRadio(s) {
     }
     if (m.nova) {
       const arr = await lireJson("https://www.nova.fr/radios-data/www.nova.fr/all.json");
-      const o = arr.find((x) => x.radio?.code === m.nova)?.currentTrack; if (!o?.title) return null;
+      const cible = m.nova.startsWith("?") ? sansAccent(m.nova.slice(1)) : null;
+      const r = cible ? (arr.find((x) => sansAccent(x.radio?.name) === cible) || arr.find((x) => sansAccent(x.radio?.name).includes(cible.replace(/^radio/, "")) || cible.includes(sansAccent(x.radio?.code))))
+        : arr.find((x) => x.radio?.code === m.nova);
+      const o = r?.currentTrack; if (!o?.title) return null;
       return { titre: propre(o.title), artiste: propre(o.artist), pochette: o.media_url || null };
     }
     if (m.nrj) {
@@ -352,6 +395,17 @@ $("#l-lire").addEventListener("click", basculerLecture);
 $("#l-moins15").addEventListener("click", () => (audio.currentTime = Math.max(0, audio.currentTime - 15)));
 $("#l-plus30").addEventListener("click", () => (audio.currentTime += 30));
 $("#l-barre").addEventListener("input", (e) => { if (audio.duration) audio.currentTime = e.target.value / 1000 * audio.duration; });
+// Lecture continue des podcasts : l'épisode suivant de la liste démarre à la fin du précédent
+$("#opt-continue").checked = lire("lectureContinue", true);
+$("#opt-continue").addEventListener("change", (e) => ecrire("lectureContinue", e.target.checked));
+audio.addEventListener("ended", () => {
+  if (courant?.type !== "podcast" || !lire("lectureContinue", true)) return;
+  const p = courant.podcast; if (!p.episodes?.length) return;
+  const l = [...p.episodes].sort((a, b) => recentsDabord ? b.date - a.date : a.date - b.date);
+  const i = l.findIndex((x) => x.audio === courant.episode.audio);
+  const suivant = l.slice(i + 1).find((x) => { const q = positions[x.audio]; return !(q && q.tot && q.pos / q.tot > .95); });
+  if (i >= 0 && suivant) { jouerEpisode(p, suivant); if (podcastOuvert === p) setTimeout(afficherEpisodes, 300); }
+});
 ["play", "pause", "waiting", "playing", "ended"].forEach((ev) => audio.addEventListener(ev, () => { majLecteur(); if (ev === "pause") sauverPosition(); }));
 audio.addEventListener("timeupdate", () => {
   if (courant?.type !== "podcast" || !audio.duration) return;
