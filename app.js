@@ -738,9 +738,13 @@ $("#resultats").addEventListener("click", (e) => {
 });
 
 // ───────────────────────── Panneaux ─────────────────────────
-function ouvrir(sel) { $(sel).hidden = false; }
-document.querySelectorAll("[data-fermer]").forEach((b) => b.addEventListener("click", () => (b.closest(".panneau").hidden = true)));
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".panneau:not([hidden])").forEach((p) => (p.hidden = true)); });
+// Voile sombre derrière les fenêtres (recherche, épisodes) ; un clic dessus ferme la fenêtre du dessus
+function majVoile() { $("#voile").hidden = !document.querySelector(".panneau.fenetre:not([hidden])"); }
+function ouvrir(sel) { $(sel).hidden = false; majVoile(); }
+function fermerPanneau(p) { p.hidden = true; majVoile(); }
+document.querySelectorAll("[data-fermer]").forEach((b) => b.addEventListener("click", () => fermerPanneau(b.closest(".panneau"))));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const l = [...document.querySelectorAll(".panneau:not([hidden])")]; if (l.length) fermerPanneau(l[l.length - 1]); } });
+$("#voile").addEventListener("click", () => { const l = [...document.querySelectorAll(".panneau.fenetre:not([hidden])")]; if (l.length) fermerPanneau(l[l.length - 1]); });
 $("#bouton-recherche").addEventListener("click", ouvrirRecherche);
 $("#bouton-options").addEventListener("click", () => { afficherOptions(); afficherCompte(); ouvrir("#panneau-options"); });
 $("#lecteur").addEventListener("click", (e) => { if (courant?.type === "podcast" && !e.target.closest("button,input,label")) ouvrirPodcast(courant.podcast); });
