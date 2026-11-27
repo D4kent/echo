@@ -347,6 +347,9 @@ async function lireFlux(feed) {
 let podcastOuvert = null, recentsDabord = true;
 async function ouvrirPodcast(p) {
   podcastOuvert = p; ouvrir("#panneau-podcast");
+  // Couleurs du podcast pour toute la page (épisodes, halo du haut)
+  const coul = p.couleur && p.couleur !== "#6A1B4D" ? melange(p.couleur, "#FFFFFF", .25) : null;
+  $("#panneau-podcast").style.setProperty("--pod", coul || "var(--a1)");
   $("#p-image").src = p.image || "icons/icone-192.png"; $("#p-titre").textContent = p.titre; $("#p-auteur").textContent = p.auteur || "";
   $("#p-desc").textContent = ""; $("#episodes").innerHTML = `<div class="chargement">Chargement des épisodes…</div>`;
   try {
