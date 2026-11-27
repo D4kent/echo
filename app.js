@@ -283,7 +283,10 @@ function officielParNom(s) {
   return trouve;
 }
 const INUTILES = ["publicit", "advert", "jingle", "en direct", "live stream", "unknown", "inconnu", "now playing", "info goes here", "untitled", "no title"];
-const utile = (t) => t && t.titre && !INUTILES.some((x) => (t.titre + " " + t.artiste).toLowerCase().includes(x)) && !/^\d+$/.test(t.titre);
+// Identifiants techniques envoyés à la place du titre (ex. « nrjaudio_314015 »)
+const technique = (x) => /^[A-Za-z]*[_\-.]?\d{3,}[\w.\-]*$/.test(x.trim()) || /nrjaudio/i.test(x);
+const utile = (t) => t && t.titre && !INUTILES.some((x) => (t.titre + " " + t.artiste).toLowerCase().includes(x)) && !/^\d+$/.test(t.titre)
+  && ![t.titre, t.artiste].filter((x) => x && x.trim()).every(technique);
 async function titreIcecast(flux) {
   for (const u of flux) {
     try {
@@ -318,7 +321,7 @@ async function titreRadio(s) {
     }
     if (m.nrj) {
       const d = await lireJson(`https://players.nrjaudio.fm/wr_api/live/fr?act=get_cur&id_wr=${m.nrj}&cp=utf8&fmt=json`);
-      const o = d.itms?.[0]; if (!o || String(o.type).toUpperCase() !== "SINGLE" || !o.tit) return null;
+      const o = (d.itms || []).find((x) => x?.tit && !["PUB", "JINGLE", "AD", "ADVERT", "HABILLAGE", "LINER", "SPOT"].includes(String(x.type || "").toUpperCase())); if (!o) return null;
       return { titre: propre(o.tit), artiste: propre(o.art), pochette: o.cov ? `https://players.nrjaudio.fm/live-metadata/player/img/600x/${o.cov}` : null };
     }
     if (m.oui) {
