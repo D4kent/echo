@@ -11,10 +11,10 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
-  <script src="app.js?v=31" defer></script>
-  <script type="module" src="compte.js?v=31"></script>
+  <script src="app.js?v=32" defer></script>
+  <script type="module" src="compte.js?v=32"></script>
 </head>
 <body>
   <div class="halos" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -87,7 +87,7 @@
   <div class="voile" id="voile" hidden></div>
   <div class="panneau fenetre" id="panneau-recherche" hidden>
     <div class="panneau-entete">
-      <button class="retour" data-fermer>←</button>
+      <button class="retour" data-fermer aria-label="Retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button>
       <nav class="onglets mode" id="mode-recherche">
         <div class="goutte" id="goutte-recherche"></div>
         <button data-mode="radios" class="actif">Radios</button>
@@ -101,7 +101,7 @@
 
   <div class="panneau fenetre" id="panneau-podcast" hidden>
     <div class="panneau-entete">
-      <button class="retour" data-fermer>←</button>
+      <button class="retour" data-fermer aria-label="Retour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button>
       <img id="p-image" class="p-image" alt="">
       <div class="p-titres"><h2 id="p-titre"></h2><div id="p-auteur"></div></div>
       <button class="puce" id="p-tri">Plus récents</button>
@@ -111,7 +111,7 @@
   </div>
 
   <div class="panneau fenetre laterale" id="panneau-options" hidden>
-    <div class="panneau-entete"><button class="retour" data-fermer>←</button><h2>Options</h2></div>
+    <div class="panneau-entete"><button class="retour" data-fermer aria-label="Fermer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button><h2>Options</h2></div>
     <div class="options">
       <section class="carte"><h3>Compte Google</h3>
         <p class="doux">Tes radios, tes podcasts et ton thème, synchronisés avec l'appli Écho de ton téléphone.</p>

@@ -299,3 +299,10 @@ html.clair .halos i { opacity: .35; }
   radial-gradient(700px 300px at 50% -10%, color-mix(in srgb, var(--a1) 18%, transparent), transparent 70%),
   color-mix(in srgb, var(--fond) 78%, transparent);
   backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); }
+
+/* Bouton retour / fermer : pictogramme net au lieu de la flèche en texte */
+.retour { display: grid; place-items: center; padding: 0; border: 0; cursor: pointer; color: var(--texte);
+  background: color-mix(in srgb, var(--texte) 9%, transparent); transition: background .2s, transform .2s; }
+.retour svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.retour:hover { background: color-mix(in srgb, var(--a1) 30%, transparent); transform: scale(1.06); }
+.retour:active { transform: scale(.94); }
