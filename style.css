@@ -266,3 +266,9 @@ body::after { display: none; }
 @keyframes derive4 { 50% { transform: translate(16vw, -16vh) scale(1.2); } 100% { transform: translate(8vw, -30vh) scale(1); } }
 html.clair .halos i { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .halos i { animation: none; } }
+
+/* Passage Radios ↔ Podcasts : la page qui part s'efface, celle qui arrive apparaît, bords en fondu pendant le glissement */
+.page { transition: transform .45s cubic-bezier(.3,.9,.3,1), opacity .45s ease; }
+.page:not(.actif) { opacity: 0; }
+.pages.glisse { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%); }
