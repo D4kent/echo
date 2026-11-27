@@ -306,3 +306,17 @@ html.clair .halos i { opacity: .35; }
 .retour svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .retour:hover { background: color-mix(in srgb, var(--a1) 30%, transparent); transform: scale(1.06); }
 .retour:active { transform: scale(.94); }
+
+/* Clic sur le logo : il part en écho (copies qui s'éloignent en s'effaçant) puis se reforme */
+.marque { cursor: pointer; }
+.marque .fantome { position: absolute; inset: 0; pointer-events: none; }
+.marque .fantome .logo-echo { filter: none; }
+.marque.echo > .logo-echo { animation: echo-principal 1.3s cubic-bezier(.3,.7,.3,1); }
+@keyframes echo-principal {
+  0% { transform: scale(1); opacity: 1; filter: blur(0); }
+  18% { transform: scale(1.12); opacity: .9; }
+  40% { transform: scale(.7); opacity: 0; filter: blur(6px); }
+  62% { transform: scale(.85); opacity: 0; filter: blur(6px); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); } }
+@keyframes echo-copie { 0% { transform: translateX(0) scale(1); opacity: .75; } 100% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(3px); } }
+@keyframes echo-retour { 0% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; } 70% { opacity: .5; } 100% { transform: none; opacity: 0; } }

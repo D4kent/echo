@@ -904,3 +904,21 @@ if (!lire("accueilVu", false)) ouvrirAccueil();
 completerLogos();
 chargerAnnuaire().then(() => afficherRadios()).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+// ───── Logo : au clic il part en écho et se reforme ─────
+$(".marque")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const m = e.currentTarget, logo = m.querySelector(".logo-echo");
+  if (m.classList.contains("echo")) return;
+  m.classList.add("echo");
+  const copies = [];
+  // Les échos partent vers la droite en grossissant et s'effacent, puis reviennent se fondre dans le logo
+  [[60, 1.15, 0], [130, 1.3, 90], [210, 1.45, 180], [-50, 1.1, 40]].forEach(([dx, sc, d]) => {
+    const f = document.createElement("div"); f.className = "fantome";
+    f.appendChild(logo.cloneNode(true));
+    f.style.setProperty("--dx", dx + "px"); f.style.setProperty("--s", sc);
+    f.style.animation = `echo-copie .55s ${d}ms cubic-bezier(.2,.7,.3,1) both, echo-retour .5s ${700 + d / 2}ms cubic-bezier(.4,0,.3,1) both`;
+    m.appendChild(f); copies.push(f);
+  });
+  setTimeout(() => { copies.forEach((f) => f.remove()); m.classList.remove("echo"); }, 1350);
+});
