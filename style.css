@@ -307,28 +307,12 @@ html.clair .halos i { opacity: .35; }
 .retour:hover { background: color-mix(in srgb, var(--a1) 30%, transparent); transform: scale(1.06); }
 .retour:active { transform: scale(.94); }
 
-/* Clic sur le logo : il part en écho (copies qui s'éloignent en s'effaçant) puis se reforme */
-.marque { cursor: default; }
-.marque .fantome { position: absolute; inset: 0; pointer-events: none; }
-.marque .fantome .logo-echo { filter: none; }
-.marque.echo > .logo-echo { animation: echo-principal 1.7s linear; }
-@keyframes echo-principal {
-  0% { transform: scale(1); opacity: 1; filter: blur(0); animation-timing-function: cubic-bezier(.3,.7,.3,1); }
-  12% { transform: scale(1.12); opacity: .9; }
-  30% { transform: scale(.7); opacity: 0; filter: blur(6px); }
-  42% { transform: scale(.7); opacity: 0; filter: blur(8px); animation-timing-function: cubic-bezier(.2,.8,.3,1.2); }
-  /* Réapparition en goutte d'eau : jaillit du centre, rebondit en taille dans le flou, puis redevient net */
-  44% { transform: scale(.05); opacity: 0; filter: blur(8px); animation-timing-function: cubic-bezier(.2,.9,.3,1); }
-  56% { transform: scale(1.24); opacity: 1; filter: blur(5px); animation-timing-function: ease-in-out; }
-  67% { transform: scale(.86); filter: blur(3.5px); animation-timing-function: ease-in-out; }
-  77% { transform: scale(1.08); filter: blur(2px); animation-timing-function: ease-in-out; }
-  87% { transform: scale(.97); filter: blur(.8px); animation-timing-function: ease-in-out; }
-  100% { transform: scale(1); opacity: 1; filter: blur(0); } }
-@keyframes echo-copie { 0% { transform: translateX(0) scale(1); opacity: .75; } 100% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(3px); } }
-@keyframes echo-retour { 0% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(4px); } 45% { opacity: .85; } 100% { transform: scale(.8); opacity: 0; filter: blur(6px); } }
-
-/* Ondes circulaires (goutte d'eau) centrées sur le logo */
-.marque .ronde { position: absolute; left: 50%; top: 50%; width: 120px; height: 46px; margin: -23px 0 0 -60px; border-radius: 50%;
-  border: 2px solid var(--a1); pointer-events: none; opacity: 0; animation: ronde .9s cubic-bezier(.2,.7,.3,1) both; }
-.marque .ronde:nth-of-type(even) { border-color: var(--a2); }
-@keyframes ronde { 0% { transform: scale(.1); opacity: .9; } 100% { transform: scale(2.4); opacity: 0; border-width: .5px; } }
+/* Survol du logo : il rebondit en taille dans le flou puis se stabilise */
+.marque.echo > .logo-echo { animation: rebond-logo 1.1s linear; }
+@keyframes rebond-logo {
+  0% { transform: scale(1); filter: blur(0); animation-timing-function: ease-out; }
+  18% { transform: scale(1.18); filter: blur(4px); animation-timing-function: ease-in-out; }
+  38% { transform: scale(.9); filter: blur(3px); animation-timing-function: ease-in-out; }
+  58% { transform: scale(1.07); filter: blur(1.8px); animation-timing-function: ease-in-out; }
+  78% { transform: scale(.98); filter: blur(.6px); animation-timing-function: ease-in-out; }
+  100% { transform: scale(1); filter: blur(0); } }

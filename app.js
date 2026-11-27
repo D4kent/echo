@@ -905,26 +905,11 @@ completerLogos();
 chargerAnnuaire().then(() => afficherRadios()).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-// ───── Logo : au survol il part en écho et se reforme ─────
+// ───── Logo : au survol il rebondit dans le flou puis se stabilise ─────
 $(".marque")?.addEventListener("click", (e) => e.preventDefault());
 $(".marque")?.addEventListener("mouseenter", (e) => {
-  const m = e.currentTarget, logo = m.querySelector(".logo-echo");
+  const m = e.currentTarget;
   if (m.classList.contains("echo")) return;
   m.classList.add("echo");
-  const copies = [];
-  // Les échos partent vers la droite en grossissant et s'effacent, puis reviennent se fondre dans le logo
-  [[60, 1.15, 0], [130, 1.3, 90], [210, 1.45, 180], [-50, 1.1, 40]].forEach(([dx, sc, d]) => {
-    const f = document.createElement("div"); f.className = "fantome";
-    f.appendChild(logo.cloneNode(true));
-    f.style.setProperty("--dx", dx + "px"); f.style.setProperty("--s", sc);
-    f.style.animation = `echo-copie .55s ${d}ms cubic-bezier(.2,.7,.3,1) both`;
-    m.appendChild(f); copies.push(f);
-  });
-  // Goutte d'eau : des ondes partent du centre au moment où le logo réapparaît
-  [0, 140, 280].forEach((d) => {
-    const r = document.createElement("i"); r.className = "ronde";
-    r.style.animationDelay = 760 + d + "ms";
-    m.appendChild(r); copies.push(r);
-  });
-  setTimeout(() => { copies.forEach((f) => f.remove()); m.classList.remove("echo"); }, 1950);
+  setTimeout(() => m.classList.remove("echo"), 1150);
 });
