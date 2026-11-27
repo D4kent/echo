@@ -1,7 +1,7 @@
 {
-  "name": "Radio Francis",
-  "short_name": "Radio Francis",
-  "description": "Tes radios et tes podcasts préférés, en un clic.",
+  "name": "Écho",
+  "short_name": "Écho",
+  "description": "Écho — tes radios et tes podcasts, au même endroit.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

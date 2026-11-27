@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Radio Francis</title>
+  <title>Écho — radios & podcasts</title>
   <meta name="description" content="Tes radios et tes podcasts préférés, en un clic.">
   <meta name="theme-color" content="#0F0B10">
   <link rel="manifest" href="manifest.webmanifest">
@@ -11,9 +11,9 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
 </head>
 <body>
   <div id="appli">
@@ -101,9 +101,21 @@
       <section class="carte"><h3>Couleurs</h3><div class="choix" id="choix-couleurs"></div></section>
       <section class="carte">
         <h3>À propos</h3>
-        <p class="doux">Version bureau de Radio Francis. Les touches multimédia du clavier (lecture, pause) fonctionnent.
+        <p class="doux">Écho, version ordinateur. Les touches multimédia du clavier (lecture, pause) fonctionnent.
           Certains sites de radios n'autorisent pas l'affichage du titre en cours depuis un navigateur : dans ce cas, seul le nom de la radio s'affiche.</p>
       </section>
+    </div>
+  </div>
+
+  <!-- Bulles de présentation (premier lancement) -->
+  <div class="accueil" id="accueil" hidden>
+    <div class="bulle">
+      <div class="bulles-piste" id="bulles-piste"></div>
+      <div class="points" id="points"></div>
+      <div class="bulle-actions">
+        <button class="lien" id="accueil-passer">Passer</button>
+        <button class="bouton" id="accueil-suivant">Suivant</button>
+      </div>
     </div>
   </div>
 

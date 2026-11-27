@@ -1,5 +1,5 @@
 "use strict";
-/* Radio Francis — version bureau (appli web installable depuis Chrome). */
+/* Écho — radios & podcasts, version ordinateur (appli web installable depuis Chrome). */
 
 // ───────────────────────── Données ─────────────────────────
 const RF = "https://stream.radiofrance.fr";
@@ -55,6 +55,7 @@ const temps = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
 const propre = (t) => { t = String(t || "").replace(/\s+/g, " ").trim();
   const l = t.replace(/[^A-Za-zÀ-ÿ]/g, ""); if (l && l === l.toUpperCase() && l.length > 3) t = t.toLowerCase().replace(/(^|[\s(\-'"])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()); return t; };
+const cleNom = (n) => String(n || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const melange = (a, b, k) => { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const x = p(a), y = p(b); return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * k).toString(16).padStart(2, "0")).join(""); };
 
@@ -413,23 +414,48 @@ function choisirMode(m) {
 $("#mode-recherche").addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (b) choisirMode(b.dataset.mode); });
 function afficherPuces() {
   const noms = (modeRecherche === "radios" ? GENRES_RADIOS : THEMES_PODCASTS).map((t) => t[0]);
-  $("#puces-recherche").innerHTML = noms.map((n) => `<button class="puce ${n === themeRecherche ? "actif" : ""}" data-theme="${echap(n)}">${echap(n)}</button>`).join("");
-  $("#puces-recherche .actif")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  const zone = $("#puces-recherche");
+  if (zone.dataset.mode !== modeRecherche) {
+    zone.dataset.mode = modeRecherche;
+    zone.innerHTML = `<div class="pastille" id="pastille"></div>` +
+      noms.map((n) => `<button class="puce" data-theme="${echap(n)}">${echap(n)}</button>`).join("");
+  }
+  // La pastille glisse jusqu'à la catégorie choisie
+  zone.querySelectorAll(".puce").forEach((b) => b.classList.toggle("actif", b.dataset.theme === themeRecherche));
+  const b = zone.querySelector(".puce.actif"), p = $("#pastille");
+  if (b && p) {
+    p.style.left = b.offsetLeft + "px"; p.style.width = b.offsetWidth + "px"; p.style.top = b.offsetTop + "px"; p.style.height = b.offsetHeight + "px";
+    p.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.85) scaleX(1.06)" }, { transform: "scaleY(1)" }], { duration: 420 });
+    b.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }
 }
 $("#puces-recherche").addEventListener("click", (e) => { const b = e.target.closest("[data-theme]"); if (!b) return; themeRecherche = b.dataset.theme; $("#champ-recherche").value = ""; afficherPuces(); chercher(); });
 let minuterieRecherche;
 $("#champ-recherche").addEventListener("input", () => { clearTimeout(minuterieRecherche); minuterieRecherche = setTimeout(chercher, 400); });
 
-const serveursRB = ["de1", "de2", "fi1", "at1", "nl1", "all"];
-let derniereErreurRB = "";
-async function radiosRB(chemin) {
-  for (const s of serveursRB) {
-    try {
-      const r = await json(`https://${s}.api.radio-browser.info/json/${chemin}`);
-      if (Array.isArray(r)) return r;
-    } catch (e) { derniereErreurRB = `${s} : ${e.message || e}`; console.warn("Annuaire radio", s, e); }
+// Annuaire des radios hébergé avec l'appli (mis à jour chaque jour) : rien à joindre d'extérieur
+let annuaire = null;
+async function chargerAnnuaire() {
+  if (annuaire) return annuaire;
+  const r = await fetch("donnees/radios.json", { cache: "no-cache" });
+  if (!r.ok) throw new Error("annuaire " + r.status);
+  annuaire = (await r.json()).map((x) => ({ stationuuid: x.id, name: x.n, url_resolved: x.u, favicon: x.f, tags: x.t,
+    countrycode: x.c, country: x.c, bitrate: x.b, clickcount: x.k, cle: cleNom(x.n) }));
+  return annuaire;
+}
+async function radiosLocales({ q, tag }) {
+  const tout = await chargerAnnuaire();
+  if (q) {
+    const c = cleNom(q);
+    return tout.filter((r) => r.cle.includes(c))
+      .sort((a, b) => (b.cle.startsWith(c) - a.cle.startsWith(c)) || (b.countrycode === "FR") - (a.countrycode === "FR") || b.clickcount - a.clickcount)
+      .slice(0, 50);
   }
-  throw new Error(derniereErreurRB);
+  const fr = tout.filter((r) => r.countrycode === "FR");
+  if (!tag) return fr.slice(0, 60);
+  const avec = (l) => l.filter((r) => (r.tags || "").toLowerCase().split(",").some((t) => t.trim().includes(tag)));
+  const res = avec(fr);
+  return res.length >= 15 ? res.slice(0, 60) : [...res, ...avec(tout.filter((r) => r.countrycode !== "FR"))].slice(0, 60);
 }
 function depuisItunes(o) { return o.feedUrl ? { feed: o.feedUrl, titre: o.collectionName || o.trackName, auteur: o.artistName || "", image: o.artworkUrl600 || o.artworkUrl100 } : null; }
 async function podcastsPopulaires(genre) {
@@ -452,10 +478,7 @@ async function chercher() {
   try {
     if (mode === "radios") {
       const tag = GENRES_RADIOS.find((t) => t[0] === theme)?.[1];
-      const base = "limit=50&hidebroken=true&order=clickcount&reverse=true";
-      const radios = q.length >= 2 ? await radiosRB(`stations/search?name=${encodeURIComponent(q)}&${base}`)
-        : tag ? await radiosRB(`stations/search?tag=${encodeURIComponent(tag)}&countrycode=FR&${base}`)
-        : await radiosRB(`stations/search?countrycode=FR&${base}`);
+      const radios = await radiosLocales({ q: q.length >= 2 ? q : null, tag });
       const titre = q.length >= 2 ? "Radios trouvées" : tag ? `Radios · ${echap(theme)}` : "Les radios les plus écoutées en France";
       html = radios.length ? `<div class="titre-liste">${titre}</div>` + lignesRadios(radios) : `<p class="doux">Aucune radio trouvée.</p>`;
     } else {
@@ -468,7 +491,7 @@ async function chercher() {
     }
   } catch (e) {
     html = mode === "radios"
-      ? `<p class="erreur">L'annuaire des radios ne répond pas depuis ce navigateur.<br><small>${echap(e.message)}</small></p>`
+      ? `<p class="erreur">Impossible de charger l'annuaire des radios.<br><small>${echap(e.message)}</small></p>`
       : `<p class="erreur">Impossible de joindre le catalogue des podcasts. Vérifie ta connexion.</p>`;
   }
   if (mode === modeRecherche && theme === themeRecherche) zone.innerHTML = html;
@@ -494,7 +517,6 @@ function lignesPodcasts(pods) {
       <button class="bouton ${deja ? "gris" : ""}" data-ajouter-pod="${echap(p.feed)}" ${deja ? "disabled" : ""}>${deja ? "Ajouté" : "Ajouter"}</button></div>`;
   }).join("");
 }
-const cleNom = (n) => String(n || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 function radioDepuisRB(r) {
   // Radio connue (FIP, Nova…) : flux officiel, logo et titres en cours
   const connue = CATALOGUE.find((c) => cleNom(c.nom) === cleNom(r.name) || cleNom(c.nom) === cleNom(r.name).replace(/^radio/, ""));
@@ -526,10 +548,40 @@ $("#bouton-recherche").addEventListener("click", ouvrirRecherche);
 $("#bouton-options").addEventListener("click", () => { afficherOptions(); ouvrir("#panneau-options"); });
 $("#lecteur").addEventListener("click", (e) => { if (courant?.type === "podcast" && !e.target.closest("button,input,label")) ouvrirPodcast(courant.podcast); });
 
+// ───────────────────────── Bulles de présentation ─────────────────────────
+const BULLES = [
+  ["É", "Bienvenue sur Écho", "Tes radios et tes podcasts préférés, réunis au même endroit. Un clic et ça joue."],
+  ["＋", "Ajoute tes radios", "Clique sur la loupe, cherche une radio par son nom ou par style, puis « Ajouter ». Clique sur une vignette pour écouter."],
+  ["♪", "Et tes podcasts", "Passe sur l'onglet Podcasts : suis tes émissions, déplie un épisode pour lire son résumé, reprends là où tu t'étais arrêté."],
+  ["⌨", "Au clavier", "Espace pour lecture / pause, flèches gauche et droite pour changer d'onglet, Échap pour fermer. Les touches multimédia marchent aussi."],
+  ["G", "Garde tout avec Google", "Connecte ton compte Google : tes radios et tes podcasts te suivent sur ton ordinateur et ton téléphone."],
+];
+let bulle = 0;
+function afficherBulle() {
+  $("#bulles-piste").style.transform = `translateX(${-100 * bulle}%)`;
+  $("#points").innerHTML = BULLES.map((_, i) => `<i class="${i === bulle ? "actif" : ""}"></i>`).join("");
+  const fin = bulle === BULLES.length - 1;
+  $("#accueil-passer").textContent = fin ? "Plus tard" : "Passer";
+  const b = $("#accueil-suivant");
+  b.className = fin ? "bouton google" : "bouton";
+  b.innerHTML = fin ? "<b>G</b> Se connecter avec Google" : "Suivant";
+}
+function ouvrirAccueil() {
+  $("#bulles-piste").innerHTML = BULLES.map(([s, t, p]) => `<div class="une-bulle"><div class="rond-bulle">${s}</div><h2>${t}</h2><p>${p}</p></div>`).join("");
+  bulle = 0; afficherBulle(); $("#accueil").hidden = false;
+}
+function fermerAccueil() { $("#accueil").hidden = true; ecrire("accueilVu", true); }
+$("#accueil-passer").addEventListener("click", fermerAccueil);
+$("#accueil-suivant").addEventListener("click", () => {
+  if (bulle < BULLES.length - 1) { bulle++; afficherBulle(); }
+  else { fermerAccueil(); window.connecterGoogle?.(); }
+});
+
 // ───────────────────────── Démarrage ─────────────────────────
 appliquerTheme();
 afficherRadios();
 afficherPodcasts();
 requestAnimationFrame(() => allerPage(0));
 window.addEventListener("resize", () => allerPage(page));
+if (!lire("accueilVu", false)) ouvrirAccueil();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
