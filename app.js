@@ -135,14 +135,51 @@ let perso = lire("radiosPerso", []);
 const toutes = () => perso;
 const titres = {}; // id → {titre, artiste, pochette}
 
+// ───── Logos vérifiés : on essaie plusieurs images et on garde la première qui est nette ─────
+function candidatsLogo(nom, logo, flux) {
+  const l = [];
+  if (logo) l.push(logo);
+  if (annuaire) {
+    const c = cleNom(nom);
+    annuaire.filter((r) => r.favicon && (r.cle === c || (flux && flux.includes(r.url_resolved))))
+      .sort((a, b) => b.clickcount - a.clickcount).forEach((r) => l.push(r.favicon));
+  }
+  return [...new Set(l.filter((u) => /^(https?:|logos\/)/.test(u)))].slice(0, 8);
+}
+function imgLogo(classe, nom, liste, idRadio = "") {
+  const ini = echap((nom || "?")[0]);
+  if (!liste.length) return `<div class="${classe === "logo" ? "initiale" : "ini"}">${ini}</div>`;
+  return `<img class="${classe}" src="${echap(liste[0])}" alt="" loading="lazy" referrerpolicy="no-referrer"
+    data-c="${echap(JSON.stringify(liste))}" data-i="0" data-ini="${ini}" data-radio-logo="${echap(idRadio)}"
+    onload="verifLogo(this)" onerror="suivantLogo(this)">`;
+}
+window.suivantLogo = (img) => {
+  const l = JSON.parse(img.dataset.c), i = +img.dataset.i + 1;
+  if (i < l.length) { img.dataset.i = i; img.src = l[i]; return; }
+  const d = document.createElement("div");
+  d.className = img.classList.contains("logo") ? "initiale" : "ini"; d.textContent = img.dataset.ini;
+  img.replaceWith(d);
+};
+window.verifLogo = (img) => {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (w < 64 || h < 64) return suivantLogo(img); // trop petit : flou
+  const r = w / h;
+  img.classList.toggle("large", r < 0.85 || r > 1.18); // logo en longueur : posé sur fond clair, sans déformation
+  // On retient le logo qui marche pour la prochaine fois (et pour le téléphone)
+  const id = img.dataset.radioLogo;
+  if (id) {
+    const s = perso.find((x) => x.id === id);
+    if (s && s.logo !== img.src && !String(s.logo || "").startsWith("logos/")) { s.logo = img.src; clearTimeout(window.__logos); window.__logos = setTimeout(() => ecrire("radiosPerso", perso), 1500); }
+  }
+};
+
 function afficherRadios() {
   $("#radios-vide").hidden = toutes().length > 0;
   $("#grille-radios").innerHTML = toutes().map((s) => {
     const t = titres[s.id];
     const fond = `linear-gradient(160deg, ${s.couleur}, ${melange(s.couleur, "#000000", .25)})`;
-    return `<div class="tuile ${s.sombre ? "sombre" : ""} ${courant?.type === "radio" && courant.id === s.id ? "en-cours" : ""}" data-radio="${s.id}" style="background:${fond}">
-      ${s.logo ? `<img class="logo" src="${echap(s.logo)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'initiale',textContent:'${echap(s.nom[0])}'}))">`
-        : `<div class="initiale">${echap(s.nom[0])}</div>`}
+    return `<div class="tuile ${s.sombre ? "sombre" : ""} ${courant?.type === "radio" && courant.id === s.id ? "en-cours" : ""}" draggable="true" data-radio="${s.id}" style="background:${fond}">
+      ${imgLogo("logo", s.nom, candidatsLogo(s.nom, s.logo, s.flux), s.id)}
       <div class="etat"><div class="eq"><i></i><i></i><i></i></div></div>
       ${s.perso ? `<button class="retirer" data-retirer="${s.id}" title="Retirer">✕</button>` : ""}
       <div class="nom">${echap(s.nom)}</div>
@@ -159,27 +196,76 @@ $("#grille-radios").addEventListener("click", (e) => {
   if (courant?.type === "radio" && courant.id === s.id && !audio.paused) arreter(); else jouerRadio(s);
 });
 
-// Titre en cours (quand le site de la radio l'autorise depuis un navigateur)
+// ───── Titre en cours ─────
+// On interroge les sites des radios ; quand un site refuse les navigateurs, on passe par un relais public.
+const RELAIS = (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u);
+async function lireJson(url) {
+  try { return await json(url, 6000); } catch { return await json(RELAIS(url), 8000); }
+}
+async function lireTexte(url) {
+  const essai = async (u) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), 7000);
+    try { const r = await fetch(u, { signal: c.signal }); if (!r.ok) throw new Error(r.status); return await r.text(); } finally { clearTimeout(t); } };
+  try { return await essai(url); } catch { return await essai(RELAIS(url)); }
+}
+function metaDe(s) {
+  if (s.meta && Object.keys(s.meta).length) return s.meta;
+  const p = String(s.metaTexte || "").split(":");
+  if (p[0] === "rf") return { rf: +p[1] || 7 };
+  if (p[0] === "nova") return { nova: p[1] };
+  if (p[0] === "nrj") return { nrj: +p[1] };
+  if (p[0] === "oui") return { oui: p[1] };
+  if (p[0] === "lag") return { lag: [p[1], +p[2] || 1] };
+  return { icy: true };
+}
+const INUTILES = ["publicit", "advert", "jingle", "en direct", "live stream", "unknown", "inconnu", "now playing", "info goes here", "untitled", "no title"];
+const utile = (t) => t && t.titre && !INUTILES.some((x) => (t.titre + " " + t.artiste).toLowerCase().includes(x)) && !/^\d+$/.test(t.titre);
+async function titreIcecast(flux) {
+  for (const u of flux) {
+    try {
+      const url = new URL(u);
+      const d = JSON.parse(await lireTexte(url.origin + "/status-json.xsl"));
+      let src = d.icestats?.source; if (!src) continue;
+      if (!Array.isArray(src)) src = [src];
+      const s = src.find((x) => String(x.listenurl || "").endsWith(url.pathname)) || (src.length === 1 ? src[0] : null);
+      const brut = s?.title || (s?.artist ? `${s.artist} - ${s.title || ""}` : "");
+      if (!brut) continue;
+      const i = brut.indexOf(" - ");
+      return i > 0 ? { artiste: propre(brut.slice(0, i)), titre: propre(brut.slice(i + 3)), pochette: null } : { artiste: "", titre: propre(brut), pochette: null };
+    } catch {}
+  }
+  return null;
+}
 async function titreRadio(s) {
-  const m = s.meta || {};
+  const m = metaDe(s);
   try {
     if (m.rf) {
-      const d = await json(`https://api.radiofrance.fr/livemeta/live/${m.rf}/webrf_webradio_player`);
+      const d = await lireJson(`https://api.radiofrance.fr/livemeta/live/${m.rf}/webrf_webradio_player`);
       const n = d.now; if (!n || !n.songUuid) return null;
       return { titre: propre(n.firstLine), artiste: propre(n.secondLine || ""), pochette: n.cover ? `https://www.radiofrance.fr/pikapi/images/${n.cover}/400x400` : null };
     }
     if (m.nova) {
-      const arr = await json("https://www.nova.fr/radios-data/www.nova.fr/all.json");
+      const arr = await lireJson("https://www.nova.fr/radios-data/www.nova.fr/all.json");
       const o = arr.find((x) => x.radio?.code === m.nova)?.currentTrack; if (!o?.title) return null;
       return { titre: propre(o.title), artiste: propre(o.artist), pochette: o.media_url || null };
     }
     if (m.nrj) {
-      const d = await json(`https://players.nrjaudio.fm/wr_api/live/fr?act=get_cur&id_wr=${m.nrj}&cp=utf8&fmt=json`);
+      const d = await lireJson(`https://players.nrjaudio.fm/wr_api/live/fr?act=get_cur&id_wr=${m.nrj}&cp=utf8&fmt=json`);
       const o = d.itms?.[0]; if (!o || String(o.type).toUpperCase() !== "SINGLE" || !o.tit) return null;
       return { titre: propre(o.tit), artiste: propre(o.art), pochette: o.cov ? `https://players.nrjaudio.fm/live-metadata/player/img/600x/${o.cov}` : null };
     }
-  } catch { /* le site refuse l'accès depuis un navigateur */ }
-  return null;
+    if (m.oui) {
+      const d = await lireJson(`https://www.ouifm.fr/api/TitleDiffusions?size=1&radioStreamId=${m.oui}&date=${Date.now()}`);
+      const t = d?.[0]?.title; if (!t?.title) return null;
+      return { titre: propre(t.title), artiste: propre(t.artist || ""), pochette: /^https?:/.test(t.coverUrl || "") ? t.coverUrl : null };
+    }
+    if (m.lag) {
+      const o = await lireJson(`https://${m.lag[0]}/cache/titrage/${m.lag[1]}`);
+      const cur = (o.nowplaying || []).find((e) => String(e.status).toLowerCase() === "playing") || o;
+      if (!cur.title) return null;
+      return { titre: propre(cur.title), artiste: propre(cur.artist || ""), pochette: cur.imageUrl || cur.image || null };
+    }
+    return await titreIcecast(s.flux || []);
+  } catch { return null; }
 }
 async function pochetteDeezer(titre, artiste) {
   try {
@@ -190,14 +276,15 @@ async function pochetteDeezer(titre, artiste) {
 async function majTitre() {
   if (courant?.type !== "radio") return;
   const s = toutes().find((x) => x.id === courant.id); if (!s) return;
-  const t = await titreRadio(s);
+  let t = await titreRadio(s);
+  if (!utile(t)) t = null;
   if (t && !t.pochette && t.artiste) t.pochette = await pochetteDeezer(t.titre, t.artiste);
   if (courant?.type !== "radio" || courant.id !== s.id) return;
   const avant = titres[s.id];
   if (t) titres[s.id] = t; else delete titres[s.id];
   if (JSON.stringify(avant) !== JSON.stringify(t)) { afficherRadios(); majLecteur(); }
 }
-setInterval(majTitre, 20000);
+setInterval(majTitre, 15000);
 
 // ───────────────────────── Lecture ─────────────────────────
 const audio = $("#audio");
@@ -312,7 +399,7 @@ async function couleurImage(url) {
 }
 function afficherPodcasts() {
   $("#podcasts-vide").hidden = suivis.length > 0;
-  $("#grille-podcasts").innerHTML = suivis.map((p) => `<div class="tuile" data-podcast="${echap(p.feed)}"
+  $("#grille-podcasts").innerHTML = suivis.map((p) => `<div class="tuile" draggable="true" data-podcast="${echap(p.feed)}"
       style="background:linear-gradient(160deg, ${p.couleur || "#6A1B4D"}, ${melange(p.couleur || "#6A1B4D", "#000000", .3)})">
       <img class="logo" src="${echap(p.image || "icons/icone-192.png")}" alt="" loading="lazy">
       <button class="retirer" data-retirer-pod="${echap(p.feed)}" title="Retirer">✕</button>
@@ -505,12 +592,28 @@ async function chercher() {
   if (mode === modeRecherche && theme === themeRecherche) zone.innerHTML = html;
 }
 let derniersResultats = { radios: [], pods: [] };
+/** Plusieurs fiches pour la même radio : on garde la meilleure (logo, flux sécurisé, qualité, écoutes). */
+function meilleuresVersions(radios) {
+  const groupes = new Map();
+  for (const r of radios) {
+    if (!r.url_resolved) continue;
+    const k = cleNom(r.name).replace(/^(radio|rts)/, "") || r.stationuuid;
+    (groupes.get(k) || groupes.set(k, []).get(k)).push(r);
+  }
+  const note = (r) => (r.favicon ? 4 : 0) + (r.url_resolved.startsWith("https") ? 2 : 0) +
+    (r.bitrate >= 128 ? 2 : r.bitrate >= 96 ? 1 : 0) + Math.log10(1 + (r.clickcount || 0));
+  return [...groupes.values()].map((g) => {
+    const best = [...g].sort((a, b) => note(b) - note(a))[0];
+    return { ...best, logos: [...new Set(g.filter((x) => x.favicon).sort((a, b) => b.clickcount - a.clickcount).map((x) => x.favicon))] };
+  });
+}
 function lignesRadios(radios) {
-  const vus = new Set(); radios = radios.filter((r) => r.url_resolved && !vus.has(r.stationuuid) && vus.add(r.stationuuid));
+  radios = meilleuresVersions(radios);
   derniersResultats.radios = radios;
   return radios.map((r) => {
     const deja = toutes().some((s) => s.flux[0] === r.url_resolved);
-    return `<div class="ligne">${r.favicon ? `<img src="${echap(r.favicon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : `<div class="ini">${echap((r.name || "?")[0])}</div>`}
+    const connue = CATALOGUE.find((c) => cleNom(c.nom).replace(/^radio/, "") === cleNom(r.name).replace(/^(radio|rts)/, ""));
+    return `<div class="ligne">${imgLogo("vignette", r.name, connue ? [connue.logo] : candidatsLogo(r.name, r.logos?.[0] || r.favicon, [r.url_resolved]))}
       <div class="txt"><b>${echap(r.name)}</b><small>${echap([r.country, r.tags?.split(",")[0], r.bitrate ? r.bitrate + " kbps" : ""].filter(Boolean).join(" · "))}</small></div>
       <button class="bouton gris" data-ecouter="${echap(r.stationuuid)}">Écouter</button>
       <button class="bouton ${deja ? "gris" : ""}" data-ajouter-radio="${echap(r.stationuuid)}" ${deja ? "disabled" : ""}>${deja ? "Ajoutée" : "Ajouter"}</button></div>`;
@@ -532,7 +635,7 @@ function radioDepuisRB(r) {
   const couleurs = ["#E1017A", "#017A93", "#6A1B9A", "#1B4093", "#C2185B", "#00796B", "#E65100", "#283593"];
   let h = 0; for (const c of r.name) h = (h * 31 + c.charCodeAt(0)) | 0;
   return { id: "rb-" + r.stationuuid, nom: propre(r.name), slogan: [r.country, r.tags?.split(",")[0]].filter(Boolean).join(" · "),
-    couleur: couleurs[Math.abs(h) % couleurs.length], logo: r.favicon || null, flux: [r.url_resolved], meta: null, perso: true };
+    couleur: couleurs[Math.abs(h) % couleurs.length], logo: r.logos?.[0] || r.favicon || null, flux: [r.url_resolved], meta: null, perso: true };
 }
 $("#resultats").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
@@ -638,6 +741,41 @@ window.echo = {
   compte(c) { compteActuel = c; afficherCompte(); },
 };
 
+// ───────────────────────── Déplacer les vignettes (glisser-déposer) ─────────────────────────
+function deplacable(grille, attr, onOrdre) {
+  let tenue = null;
+  grille.addEventListener("dragstart", (e) => {
+    tenue = e.target.closest(`[${attr}]`); if (!tenue) return;
+    tenue.classList.add("tenue"); e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", "");
+  });
+  grille.addEventListener("dragover", (e) => {
+    if (!tenue) return; e.preventDefault();
+    const cible = e.target.closest(`[${attr}]`); if (!cible || cible === tenue) return;
+    // Animation douce des autres vignettes (FLIP)
+    const avant = new Map([...grille.children].map((el) => [el, el.getBoundingClientRect()]));
+    const r = cible.getBoundingClientRect();
+    const apres = (e.clientX - r.left) > r.width / 2;
+    grille.insertBefore(tenue, apres ? cible.nextSibling : cible);
+    for (const el of grille.children) {
+      const a = avant.get(el), b = el.getBoundingClientRect();
+      if (!a || el === tenue) continue;
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (dx || dy) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 220, easing: "cubic-bezier(.3,.9,.4,1)" });
+    }
+  });
+  grille.addEventListener("dragend", () => {
+    if (!tenue) return; tenue.classList.remove("tenue"); tenue = null;
+    onOrdre([...grille.querySelectorAll(`[${attr}]`)].map((el) => el.getAttribute(attr)));
+  });
+}
+deplacable($("#grille-radios"), "data-radio", (ids) => {
+  perso = ids.map((id) => perso.find((s) => s.id === id)).filter(Boolean); ecrire("radiosPerso", perso);
+});
+deplacable($("#grille-podcasts"), "data-podcast", (ids) => {
+  suivis = ids.map((f) => suivis.find((p) => p.feed === f)).filter(Boolean); ecrire("podcasts", suivis);
+});
+
 // ───────────────────────── Démarrage ─────────────────────────
 appliquerTheme();
 afficherRadios();
@@ -646,4 +784,5 @@ requestAnimationFrame(() => allerPage(0));
 window.addEventListener("resize", () => allerPage(page));
 if (!lire("accueilVu", false)) ouvrirAccueil();
 completerLogos();
+chargerAnnuaire().then(() => afficherRadios()).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

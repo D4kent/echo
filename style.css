@@ -199,3 +199,12 @@ html { background-color: var(--fond); } body { background: transparent; }
 #episodes .episode .jouer { background: color-mix(in srgb, var(--pod, var(--a1)) 55%, transparent); }
 #episodes .episode .jouer.actif { background: var(--degrade); }
 #episodes .episode.lu { opacity: .6; }
+
+/* Logos en longueur : centrés sur fond clair, jamais déformés */
+.tuile .logo { object-fit: cover; }
+.tuile .logo.large, .ligne img.large { object-fit: contain; background: #fff; padding: 9%; }
+.ligne img.vignette { width: 58px; height: 58px; border-radius: 12px; object-fit: cover; flex: none; background: rgba(255,255,255,.08); }
+.ligne img.vignette.large { padding: 6px; }
+/* Glisser-déposer */
+.tuile[draggable="true"] { cursor: grab; }
+.tuile.tenue { opacity: .35; transform: scale(.94); }
