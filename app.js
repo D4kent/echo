@@ -112,7 +112,7 @@ $("#panneau-options").addEventListener("click", (e) => {
 // ───────────────────────── Onglets / pages ─────────────────────────
 let page = 0;
 function allerPage(p) {
-  page = p;
+  page = p; if (p === 0) setTimeout(majTuiles, 300);
   document.querySelectorAll("#onglets button").forEach((b, i) => b.classList.toggle("actif", i === p));
   const b = document.querySelectorAll("#onglets button")[p];
   const g = $("#goutte"); g.style.left = b.offsetLeft + "px"; g.style.width = b.offsetWidth + "px";
@@ -285,6 +285,35 @@ async function majTitre() {
   if (JSON.stringify(avant) !== JSON.stringify(t)) { afficherRadios(); majLecteur(); }
 }
 setInterval(majTitre, 15000);
+
+// Titres de toutes les vignettes (pas seulement la radio en cours), mis à jour sans redessiner la grille
+function majTexteTuile(s) {
+  const el = document.querySelector(`#grille-radios [data-radio="${CSS.escape(s.id)}"]`); if (!el) return;
+  const t = titres[s.id];
+  el.querySelector(".t1").textContent = t ? t.titre : s.slogan || "";
+  el.querySelector(".t2").textContent = t ? t.artiste : "";
+  el.classList.toggle("avec-titre", !!t);
+}
+let tuilesEnCours = false;
+async function majTuiles() {
+  if (tuilesEnCours || document.hidden || page !== 0) return;
+  tuilesEnCours = true;
+  try {
+    const file = toutes().filter((s) => !(courant?.type === "radio" && courant.id === s.id));
+    const travail = async () => {
+      for (let s; (s = file.shift()); ) {
+        let t = await titreRadio(s); if (!utile(t)) t = null;
+        const ancien = titres[s.id];
+        if (t) titres[s.id] = { ...t, pochette: ancien?.titre === t.titre ? ancien.pochette : t.pochette }; else delete titres[s.id];
+        majTexteTuile(s);
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  } finally { tuilesEnCours = false; }
+}
+setInterval(majTuiles, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) majTuiles(); });
+setTimeout(majTuiles, 1500);
 
 // ───────────────────────── Lecture ─────────────────────────
 const audio = $("#audio");
