@@ -11,9 +11,10 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
-  <script src="app.js?v=7" defer></script>
+  <script src="app.js?v=8" defer></script>
+  <script type="module" src="compte.js?v=8"></script>
 </head>
 <body>
   <div id="appli">
@@ -97,6 +98,9 @@
   <div class="panneau" id="panneau-options" hidden>
     <div class="panneau-entete"><button class="retour" data-fermer>←</button><h2>Options</h2></div>
     <div class="options">
+      <section class="carte"><h3>Compte Google</h3>
+        <p class="doux">Tes radios, tes podcasts et ton thème, synchronisés avec l'appli Écho de ton téléphone.</p>
+        <div id="zone-compte"></div></section>
       <section class="carte"><h3>Fond</h3><div class="choix" id="choix-modes"></div></section>
       <section class="carte"><h3>Couleurs</h3><div class="choix" id="choix-couleurs"></div></section>
       <section class="carte">

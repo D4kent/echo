@@ -49,7 +49,12 @@ const COULEURS = [
 // ───────────────────────── Outils ─────────────────────────
 const $ = (s) => document.querySelector(s);
 const lire = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const PARTAGES = ["radiosPerso", "podcasts", "positions", "theme"];
+const ecrire = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+  // Données du compte : on note l'heure du changement et on prévient la synchronisation
+  if (PARTAGES.includes(k)) { try { localStorage.setItem("maj", String(Date.now())); } catch {} window.changementLocal?.(); }
+};
 const echap = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const temps = (s) => { s = Math.max(0, Math.floor(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
@@ -545,7 +550,7 @@ function ouvrir(sel) { $(sel).hidden = false; }
 document.querySelectorAll("[data-fermer]").forEach((b) => b.addEventListener("click", () => (b.closest(".panneau").hidden = true)));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".panneau:not([hidden])").forEach((p) => (p.hidden = true)); });
 $("#bouton-recherche").addEventListener("click", ouvrirRecherche);
-$("#bouton-options").addEventListener("click", () => { afficherOptions(); ouvrir("#panneau-options"); });
+$("#bouton-options").addEventListener("click", () => { afficherOptions(); afficherCompte(); ouvrir("#panneau-options"); });
 $("#lecteur").addEventListener("click", (e) => { if (courant?.type === "podcast" && !e.target.closest("button,input,label")) ouvrirPodcast(courant.podcast); });
 
 // ───────────────────────── Bulles de présentation ─────────────────────────
@@ -576,6 +581,38 @@ $("#accueil-suivant").addEventListener("click", () => {
   if (bulle < BULLES.length - 1) { bulle++; afficherBulle(); }
   else { fermerAccueil(); window.connecterGoogle?.(); }
 });
+
+// ───────────────────────── Compte Google (voir compte.js) ─────────────────────────
+let compteActuel = null, etatSync = "";
+function afficherCompte() {
+  const z = $("#zone-compte"); if (!z) return;
+  if (compteActuel) {
+    z.innerHTML = `<div class="compte">${compteActuel.photo ? `<img src="${echap(compteActuel.photo)}" alt="" referrerpolicy="no-referrer">` : `<div class="ini">${echap((compteActuel.nom || "?")[0])}</div>`}
+      <div><b>${echap(compteActuel.nom || "Connecté")}</b><small>${echap(compteActuel.email || "")}</small></div></div>
+      <p class="${etatSync ? "doux" : "ok"}">${echap(etatSync || "✓ Synchronisé avec ton téléphone")}</p>
+      <button class="bouton gris" id="b-deconnexion">Se déconnecter</button>`;
+    $("#b-deconnexion").onclick = () => window.deconnecterGoogle?.();
+  } else {
+    z.innerHTML = `<button class="bouton google" id="b-connexion"><b>G</b> Se connecter avec Google</button>
+      ${etatSync ? `<p class="erreur">${echap(etatSync)}</p>` : ""}`;
+    $("#b-connexion").onclick = () => window.connecterGoogle?.();
+  }
+}
+window.echo = {
+  catalogue: CATALOGUE,
+  donnees: () => ({ radios: perso, podcasts: suivis, positions, theme, maj: +localStorage.getItem("maj") || 0 }),
+  async appliquer(d) {
+    perso = d.radios; suivis = d.podcasts; positions = d.positions;
+    if (d.theme) theme = { mode: d.theme.mode || "sombre", couleur: d.theme.couleur || "rose" };
+    for (const p of suivis) if (!p.couleur && p.image) p.couleur = await couleurImage(p.image);
+    localStorage.setItem("radiosPerso", JSON.stringify(perso)); localStorage.setItem("podcasts", JSON.stringify(suivis));
+    localStorage.setItem("positions", JSON.stringify(positions)); localStorage.setItem("theme", JSON.stringify(theme));
+    localStorage.setItem("maj", String(d.maj));
+    appliquerTheme(); afficherRadios(); afficherPodcasts();
+  },
+  etatCompte(t) { etatSync = t; afficherCompte(); },
+  compte(c) { compteActuel = c; afficherCompte(); },
+};
 
 // ───────────────────────── Démarrage ─────────────────────────
 appliquerTheme();
