@@ -284,7 +284,7 @@ async function majTitre() {
   if (t) titres[s.id] = t; else delete titres[s.id];
   if (JSON.stringify(avant) !== JSON.stringify(t)) { afficherRadios(); majLecteur(); }
 }
-setInterval(majTitre, 15000);
+setInterval(majTitre, 5000);
 
 // Titres de toutes les vignettes (pas seulement la radio en cours), mis à jour sans redessiner la grille
 function majTexteTuile(s) {
@@ -311,7 +311,7 @@ async function majTuiles() {
     await Promise.all([travail(), travail(), travail()]);
   } finally { tuilesEnCours = false; }
 }
-setInterval(majTuiles, 30000);
+setInterval(majTuiles, 5000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) majTuiles(); });
 setTimeout(majTuiles, 1500);
 
