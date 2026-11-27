@@ -323,3 +323,7 @@ html.clair .halos i { opacity: .35; }
   58% { transform: scale(1.07); filter: blur(1.8px); animation-timing-function: ease-in-out; }
   78% { transform: scale(.98); filter: blur(.6px); animation-timing-function: ease-in-out; }
   100% { transform: scale(1); filter: blur(0); } }
+
+/* Logos des vignettes : affichés en fondu une fois validés (pas de clignotement pendant la recherche du bon logo) */
+.tuile img.logo { opacity: 0; transition: opacity .35s; }
+.tuile img.logo.pret { opacity: 1; }

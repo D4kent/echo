@@ -147,15 +147,22 @@ function candidatsLogo(nom, logo, flux) {
   }
   return [...new Set(l.filter((u) => /^(https?:|logos\/)/.test(u)))].slice(0, 8);
 }
+// Logos déjà validés (une fois trouvés, ils s'affichent tout de suite aux chargements suivants)
+const logosOk = lire("logosOk", {});
 function imgLogo(classe, nom, liste, idRadio = "") {
   const ini = echap((nom || "?")[0]);
+  const ok = idRadio && logosOk[idRadio];
+  if (ok) liste = [ok, ...liste.filter((u) => u !== ok)];
   if (!liste.length) return `<div class="${classe === "logo" ? "initiale" : "ini"}">${ini}</div>`;
-  return `<img class="${classe}" src="${echap(liste[0])}" alt="" loading="lazy" referrerpolicy="no-referrer"
+  return `<img class="${classe}${ok ? " pret" : ""}" src="${echap(liste[0])}" alt="" decoding="async" referrerpolicy="no-referrer"
     data-c="${echap(JSON.stringify(liste))}" data-i="0" data-ini="${ini}" data-radio-logo="${echap(idRadio)}"
     onload="verifLogo(this)" onerror="suivantLogo(this)">`;
 }
 window.suivantLogo = (img) => {
   const l = JSON.parse(img.dataset.c), i = +img.dataset.i + 1;
+  const id = img.dataset.radioLogo;
+  if (id && logosOk[id] === l[i - 1]) { delete logosOk[id]; try { localStorage.setItem("logosOk", JSON.stringify(logosOk)); } catch {} }
+  img.classList.remove("pret");
   if (i < l.length) { img.dataset.i = i; img.src = l[i]; return; }
   const d = document.createElement("div");
   d.className = img.classList.contains("logo") ? "initiale" : "ini"; d.textContent = img.dataset.ini;
@@ -166,8 +173,10 @@ window.verifLogo = (img) => {
   if (w < 64 || h < 64) return suivantLogo(img); // trop petit : flou
   const r = w / h;
   img.classList.toggle("large", r < 0.85 || r > 1.18); // logo en longueur : posé sur fond clair, sans déformation
+  img.classList.add("pret");
   // On retient le logo qui marche pour la prochaine fois (et pour le téléphone)
   const id = img.dataset.radioLogo;
+  if (id && logosOk[id] !== img.src) { logosOk[id] = img.src; try { localStorage.setItem("logosOk", JSON.stringify(logosOk)); } catch {} }
   if (id) {
     const s = perso.find((x) => x.id === id);
     if (s && s.logo !== img.src && !String(s.logo || "").startsWith("logos/")) { s.logo = img.src; clearTimeout(window.__logos); window.__logos = setTimeout(() => ecrire("radiosPerso", perso), 1500); }
@@ -176,6 +185,8 @@ window.verifLogo = (img) => {
 
 function afficherRadios() {
   $("#radios-vide").hidden = toutes().length > 0;
+  const gardes = {};
+  document.querySelectorAll("#grille-radios img[data-radio-logo].pret").forEach((im) => (gardes[im.dataset.radioLogo] = im));
   $("#grille-radios").innerHTML = toutes().map((s) => {
     const t = titres[s.id];
     const fond = `linear-gradient(160deg, ${s.couleur}, ${melange(s.couleur, "#000000", .25)})`;
@@ -188,6 +199,9 @@ function afficherRadios() {
       <div class="t2">${echap(t ? t.artiste : "")}</div>
     </div>`;
   }).join("");
+  document.querySelectorAll("#grille-radios img[data-radio-logo]").forEach((im) => {
+    const g = gardes[im.dataset.radioLogo]; if (g) im.replaceWith(g);
+  });
   if (toutes().some((s) => !verifiees?.has(s.id))) setTimeout(() => majTuiles(), 0);
 }
 $("#grille-radios").addEventListener("click", (e) => {
@@ -327,7 +341,7 @@ async function majTitre() {
   if (courant?.type !== "radio" || courant.id !== s.id) return;
   const avant = titres[s.id];
   if (t) titres[s.id] = t; else delete titres[s.id];
-  if (JSON.stringify(avant) !== JSON.stringify(t)) { afficherRadios(); majLecteur(); }
+  if (JSON.stringify(avant) !== JSON.stringify(t)) { majTexteTuile(s); majLecteur(); }
 }
 setInterval(majTitre, 5000);
 
