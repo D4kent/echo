@@ -273,3 +273,9 @@ html.clair .halos i { opacity: .35; }
   mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%); }
 .page { padding-left: 28px; padding-right: 28px; transition: transform .45s cubic-bezier(.3,.9,.3,1), opacity .45s ease; will-change: transform; }
 .page:not(.actif) { opacity: 0; }
+
+/* Fenêtre des épisodes : fond légèrement teinté de la couleur du logo du podcast */
+#panneau-podcast { background:
+  radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--pod-fond, var(--a1)) 34%, transparent), transparent 75%),
+  linear-gradient(180deg, color-mix(in srgb, var(--pod-fond, var(--a1)) 16%, var(--fond)), color-mix(in srgb, var(--pod-fond, var(--a1)) 8%, var(--fond)));
+  transition: background .6s; }

@@ -469,7 +469,14 @@ function sauverPosition() {
   positions[courant.episode.audio] = { pos: audio.currentTime, tot: audio.duration || 0 };
   ecrire("positions", positions);
 }
+// Couleur dominante d'une image ; si le site de l'image refuse, on la relit via un relais d'images (en tout petit)
 async function couleurImage(url) {
+  if (!url) return "#6A1B4D";
+  const c = await couleurImage1(url);
+  if (c !== "#6A1B4D") return c;
+  return couleurImage1("https://images.weserv.nl/?w=32&h=32&url=" + encodeURIComponent(url.replace(/^https?:\/\//, "")));
+}
+async function couleurImage1(url) {
   return new Promise((ok) => {
     const img = new Image(); img.crossOrigin = "anonymous";
     img.onload = () => { try {
@@ -522,8 +529,16 @@ let podcastOuvert = null, recentsDabord = true;
 async function ouvrirPodcast(p) {
   podcastOuvert = p; ouvrir("#panneau-podcast");
   // Couleurs du podcast pour toute la page (épisodes, halo du haut)
-  const coul = p.couleur && p.couleur !== "#6A1B4D" ? melange(p.couleur, "#FFFFFF", .25) : null;
-  $("#panneau-podcast").style.setProperty("--pod", coul || "var(--a1)");
+  const teinter = (c) => {
+    const ok = c && c !== "#6A1B4D";
+    $("#panneau-podcast").style.setProperty("--pod", ok ? melange(c, "#FFFFFF", .25) : "var(--a1)");
+    $("#panneau-podcast").style.setProperty("--pod-fond", ok ? c : "var(--a1)");
+  };
+  teinter(p.couleur);
+  if ((!p.couleur || p.couleur === "#6A1B4D") && p.image) couleurImage(p.image).then((c) => {
+    if (c !== "#6A1B4D") { p.couleur = c; if (suivis.includes(p)) { ecrire("podcasts", suivis); afficherPodcasts(); } }
+    if (podcastOuvert === p) teinter(c);
+  });
   $("#p-image").src = p.image || "icons/icone-192.png"; $("#p-titre").textContent = p.titre; $("#p-auteur").textContent = p.auteur || "";
   $("#p-desc").textContent = ""; $("#episodes").innerHTML = `<div class="chargement">Chargement des épisodes…</div>`;
   try {
