@@ -3,7 +3,8 @@
 
 // ───────────────────────── Données ─────────────────────────
 const RF = "https://stream.radiofrance.fr";
-const STATIONS = [
+// Radios connues : quand on en ajoute une, on reprend son flux officiel, son logo et ses titres
+const CATALOGUE = [
   { id: "couleur3", nom: "Couleur 3", slogan: "RTS · Lausanne", couleur: "#FF78CD", sombre: true, logo: "logos/logo_couleur3.png",
     flux: ["https://stream.srg-ssr.ch/m/couleur3/mp3_128"], meta: null },
   { id: "meuh", nom: "Radio Meuh", slogan: "La Clusaz", couleur: "#F2EFE8", sombre: true, logo: "logos/logo_meuh.png",
@@ -125,10 +126,11 @@ document.addEventListener("keydown", (e) => {
 
 // ───────────────────────── Radios ─────────────────────────
 let perso = lire("radiosPerso", []);
-const toutes = () => [...STATIONS, ...perso];
+const toutes = () => perso;
 const titres = {}; // id → {titre, artiste, pochette}
 
 function afficherRadios() {
+  $("#radios-vide").hidden = toutes().length > 0;
   $("#grille-radios").innerHTML = toutes().map((s) => {
     const t = titres[s.id];
     const fond = `linear-gradient(160deg, ${s.couleur}, ${melange(s.couleur, "#000000", .25)})`;
@@ -465,7 +467,11 @@ function lignesPodcasts(pods) {
       <button class="bouton ${deja ? "gris" : ""}" data-ajouter-pod="${echap(p.feed)}" ${deja ? "disabled" : ""}>${deja ? "Ajouté" : "Ajouter"}</button></div>`;
   }).join("");
 }
+const cleNom = (n) => String(n || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 function radioDepuisRB(r) {
+  // Radio connue (FIP, Nova…) : flux officiel, logo et titres en cours
+  const connue = CATALOGUE.find((c) => cleNom(c.nom) === cleNom(r.name) || cleNom(c.nom) === cleNom(r.name).replace(/^radio/, ""));
+  if (connue) return { ...connue, perso: true };
   const couleurs = ["#E1017A", "#017A93", "#6A1B9A", "#1B4093", "#C2185B", "#00796B", "#E65100", "#283593"];
   let h = 0; for (const c of r.name) h = (h * 31 + c.charCodeAt(0)) | 0;
   return { id: "rb-" + r.stationuuid, nom: propre(r.name), slogan: [r.country, r.tags?.split(",")[0]].filter(Boolean).join(" · "),
