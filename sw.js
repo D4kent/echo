@@ -1,7 +1,7 @@
 // Garde l'interface de l'appli en cache pour qu'elle s'ouvre instantanément (les flux restent en direct).
-const CACHE = "echo-v34";
+const CACHE = "echo-v35";
 const FICHIERS = [
-  "./", "index.html", "style.css", "app.js", "manifest.webmanifest",
+  "./", "index.html", "style.css", "app.js", "polices/inter-latin.woff2", "manifest.webmanifest",
   "icons/icone-192.png", "icons/icone-512.png",
   "logos/logo_couleur3.png", "logos/logo_meuh.png", "logos/logo_fip.png", "logos/logo_fippop.png",
   "logos/logo_fipjazz.png", "logos/logo_fipcultes.png", "logos/logo_nova.png", "logos/logo_nostalgie.png",
