@@ -93,6 +93,7 @@ function appliquerTheme() {
   r.setProperty("--a1", c.a1); r.setProperty("--a2", c.a2);
   if (c.id === "irise") r.setProperty("--degrade", "linear-gradient(120deg,#FF1F3D,#E0218A 30%,#8B2FD8 55%,#1FB8B0 78%,#FF7A59)");
   else r.removeProperty("--degrade");
+  document.documentElement.classList.toggle("clair", m.id === "clair");
   document.querySelector('meta[name="theme-color"]').content = m.fond;
   ecrire("theme", theme);
   majLecteur();
