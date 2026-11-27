@@ -289,13 +289,13 @@ html.clair .halos i { opacity: .35; }
 @keyframes onde { 0%, 100% { opacity: .25; } 25% { opacity: 1; } 60% { opacity: .45; } }
 @media (max-width: 700px) { .marque { display: none; } }
 
-/* Épisodes et options : 90 % d'opacité, le fond flouté transparaît légèrement */
+/* Épisodes et options : 78 % d'opacité, le fond flouté transparaît légèrement */
 #panneau-podcast { background:
   radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--pod-fond, var(--a1)) 30%, transparent), transparent 75%),
-  linear-gradient(180deg, color-mix(in srgb, color-mix(in srgb, var(--pod-fond, var(--a1)) 16%, var(--fond)) 90%, transparent),
-                          color-mix(in srgb, color-mix(in srgb, var(--pod-fond, var(--a1)) 8%, var(--fond)) 90%, transparent));
+  linear-gradient(180deg, color-mix(in srgb, color-mix(in srgb, var(--pod-fond, var(--a1)) 16%, var(--fond)) 78%, transparent),
+                          color-mix(in srgb, color-mix(in srgb, var(--pod-fond, var(--a1)) 8%, var(--fond)) 78%, transparent));
   backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); }
 #panneau-options { background:
   radial-gradient(700px 300px at 50% -10%, color-mix(in srgb, var(--a1) 18%, transparent), transparent 70%),
-  color-mix(in srgb, var(--fond) 90%, transparent);
+  color-mix(in srgb, var(--fond) 78%, transparent);
   backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); }
