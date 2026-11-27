@@ -112,7 +112,7 @@ $("#panneau-options").addEventListener("click", (e) => {
 // ───────────────────────── Onglets / pages ─────────────────────────
 let page = 0;
 function allerPage(p) {
-  page = p; if (p === 0) setTimeout(majTuiles, 300);
+  page = p;
   document.querySelectorAll("#onglets button").forEach((b, i) => b.classList.toggle("actif", i === p));
   const b = document.querySelectorAll("#onglets button")[p];
   const g = $("#goutte"); g.style.left = b.offsetLeft + "px"; g.style.width = b.offsetWidth + "px";
@@ -187,6 +187,7 @@ function afficherRadios() {
       <div class="t2">${echap(t ? t.artiste : "")}</div>
     </div>`;
   }).join("");
+  if (toutes().some((s) => !verifiees?.has(s.id))) setTimeout(() => majTuiles(), 0);
 }
 $("#grille-radios").addEventListener("click", (e) => {
   const r = e.target.closest("[data-retirer]");
@@ -294,17 +295,19 @@ function majTexteTuile(s) {
   el.querySelector(".t2").textContent = t ? t.artiste : "";
   el.classList.toggle("avec-titre", !!t);
 }
-let tuilesEnCours = false;
+var tuilesEnCours = false;
+var verifiees = new Set(); // radios déjà interrogées au moins une fois
 async function majTuiles() {
-  if (tuilesEnCours || document.hidden || page !== 0) return;
+  if (tuilesEnCours || document.hidden) return;
   tuilesEnCours = true;
   try {
-    const file = toutes().filter((s) => !(courant?.type === "radio" && courant.id === s.id));
+    const file = [...toutes()];
     const travail = async () => {
       for (let s; (s = file.shift()); ) {
         let t = await titreRadio(s); if (!utile(t)) t = null;
         const ancien = titres[s.id];
         if (t) titres[s.id] = { ...t, pochette: ancien?.titre === t.titre ? ancien.pochette : t.pochette }; else delete titres[s.id];
+        verifiees.add(s.id);
         majTexteTuile(s);
       }
     };
@@ -313,7 +316,7 @@ async function majTuiles() {
 }
 setInterval(majTuiles, 5000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) majTuiles(); });
-setTimeout(majTuiles, 1500);
+majTuiles();
 
 // ───────────────────────── Lecture ─────────────────────────
 const audio = $("#audio");
