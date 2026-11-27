@@ -118,11 +118,6 @@ function allerPage(p) {
   const b = document.querySelectorAll("#onglets button")[p];
   const g = $("#goutte"); g.style.left = b.offsetLeft + "px"; g.style.width = b.offsetWidth + "px";
   g.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.82) scaleX(1.08)" }, { transform: "scaleY(1)" }], { duration: 450 });
-  const pages = $("#pages");
-  if (pages.dataset.page !== undefined && +pages.dataset.page !== p) {
-    pages.classList.add("glisse"); clearTimeout(pages._g); pages._g = setTimeout(() => pages.classList.remove("glisse"), 480);
-  }
-  pages.dataset.page = p;
   document.querySelectorAll(".page").forEach((el, i) => { el.style.transform = `translateX(${-100 * p}%)`; el.classList.toggle("actif", i === p); });
   // Titre qui se transforme lettre par lettre
   const mot = p === 0 ? "adios" : "odcasts";

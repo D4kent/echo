@@ -255,11 +255,11 @@ html { background-color: var(--fond); } body { background: transparent; }
 /* Halos de fond : plus visibles et qui dérivent lentement */
 body::after { display: none; }
 .halos { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-.halos i { position: absolute; width: 62vmax; height: 46vmax; border-radius: 50%; filter: blur(60px); opacity: .55; will-change: transform; }
-.halos i:nth-child(1) { left: -16vmax; top: -18vmax; background: radial-gradient(closest-side, var(--a1), transparent); animation: derive1 26s ease-in-out infinite alternate; }
-.halos i:nth-child(2) { right: -18vmax; top: -16vmax; background: radial-gradient(closest-side, #8B2FD8, transparent); animation: derive2 31s ease-in-out infinite alternate; }
-.halos i:nth-child(3) { right: -8vmax; bottom: -22vmax; background: radial-gradient(closest-side, var(--a2), transparent); animation: derive3 29s ease-in-out infinite alternate; }
-.halos i:nth-child(4) { left: -20vmax; bottom: -20vmax; background: radial-gradient(closest-side, #1FB8B0, transparent); opacity: .45; animation: derive4 34s ease-in-out infinite alternate; }
+.halos i { position: absolute; width: 70vmax; height: 52vmax; opacity: .6; will-change: transform; contain: strict; }
+.halos i:nth-child(1) { left: -16vmax; top: -18vmax; background: radial-gradient(closest-side, var(--a1), color-mix(in srgb, var(--a1) 35%, transparent) 55%, transparent); animation: derive1 26s ease-in-out infinite alternate; }
+.halos i:nth-child(2) { right: -18vmax; top: -16vmax; background: radial-gradient(closest-side, #8B2FD8, color-mix(in srgb, #8B2FD8 35%, transparent) 55%, transparent); animation: derive2 31s ease-in-out infinite alternate; }
+.halos i:nth-child(3) { right: -8vmax; bottom: -22vmax; background: radial-gradient(closest-side, var(--a2), color-mix(in srgb, var(--a2) 35%, transparent) 55%, transparent); animation: derive3 29s ease-in-out infinite alternate; }
+.halos i:nth-child(4) { left: -20vmax; bottom: -20vmax; background: radial-gradient(closest-side, #1FB8B0, color-mix(in srgb, #1FB8B0 35%, transparent) 55%, transparent); opacity: .45; animation: derive4 34s ease-in-out infinite alternate; }
 @keyframes derive1 { 50% { transform: translate(14vw, 10vh) scale(1.15); } 100% { transform: translate(28vw, -4vh) scale(.92); } }
 @keyframes derive2 { 50% { transform: translate(-18vw, 14vh) scale(.9); } 100% { transform: translate(-6vw, 26vh) scale(1.18); } }
 @keyframes derive3 { 50% { transform: translate(-22vw, -10vh) scale(1.1); } 100% { transform: translate(-36vw, 4vh) scale(.95); } }
@@ -267,8 +267,9 @@ body::after { display: none; }
 html.clair .halos i { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .halos i { animation: none; } }
 
-/* Passage Radios ↔ Podcasts : la page qui part s'efface, celle qui arrive apparaît, bords en fondu pendant le glissement */
-.page { transition: transform .45s cubic-bezier(.3,.9,.3,1), opacity .45s ease; }
+/* Passage Radios ↔ Podcasts : fondu permanent sur les bords, placé dans la marge (rien ne bouge au repos,
+   aucune apparition/disparition), et la page qui part s'efface pendant que l'autre arrive */
+.pages { margin: 0 -28px; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%); }
+.page { padding-left: 28px; padding-right: 28px; transition: transform .45s cubic-bezier(.3,.9,.3,1), opacity .45s ease; will-change: transform; }
 .page:not(.actif) { opacity: 0; }
-.pages.glisse { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%); }
