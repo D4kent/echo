@@ -1,5 +1,5 @@
 // Garde l'interface de l'appli en cache pour qu'elle s'ouvre instantanément (les flux restent en direct).
-const CACHE = "echo-v22";
+const CACHE = "echo-v23";
 const FICHIERS = [
   "./", "index.html", "style.css", "app.js", "manifest.webmanifest",
   "icons/icone-192.png", "icons/icone-512.png",
