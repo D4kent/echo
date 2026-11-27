@@ -279,3 +279,12 @@ html.clair .halos i { opacity: .35; }
   radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--pod-fond, var(--a1)) 34%, transparent), transparent 75%),
   linear-gradient(180deg, color-mix(in srgb, var(--pod-fond, var(--a1)) 16%, var(--fond)), color-mix(in srgb, var(--pod-fond, var(--a1)) 8%, var(--fond)));
   transition: background .6s; }
+
+/* Logo Écho au centre de l'en-tête : le mot en dégradé et trois ondes qui se propagent comme un écho */
+.entete { position: relative; }
+.marque { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); display: block; -webkit-app-region: no-drag; }
+.logo-echo { height: 52px; width: auto; display: block; overflow: visible; filter: drop-shadow(0 4px 18px color-mix(in srgb, var(--a1) 35%, transparent)); }
+.logo-echo .onde { animation: onde 2.4s ease-out infinite; transform-box: fill-box; transform-origin: left center; }
+.logo-echo .o2 { animation-delay: .25s; } .logo-echo .o3 { animation-delay: .5s; }
+@keyframes onde { 0%, 100% { opacity: .25; } 25% { opacity: 1; } 60% { opacity: .45; } }
+@media (max-width: 700px) { .marque { display: none; } }
