@@ -582,6 +582,26 @@ $("#accueil-suivant").addEventListener("click", () => {
   else { fermerAccueil(); window.connecterGoogle?.(); }
 });
 
+// ───────────────────────── Logos manquants ─────────────────────────
+// Radios venues du téléphone sans logo : on cherche dans les radios connues, puis dans l'annuaire
+async function completerLogos() {
+  const sans = perso.filter((s) => !s.logo);
+  if (!sans.length) return;
+  let tout = [];
+  try { tout = await chargerAnnuaire(); } catch {}
+  let change = false;
+  for (const s of sans) {
+    const c = cleNom(s.nom).replace(/^(rts|radio)/, "");
+    const connue = CATALOGUE.find((x) => cleNom(x.nom).replace(/^radio/, "") === c);
+    if (connue) { s.logo = connue.logo; change = true; continue; }
+    const parFlux = tout.find((r) => r.favicon && s.flux.includes(r.url_resolved));
+    const parNom = tout.find((r) => r.favicon && r.cle === cleNom(s.nom));
+    const r = parFlux || parNom;
+    if (r) { s.logo = r.favicon; change = true; }
+  }
+  if (change) { ecrire("radiosPerso", perso); afficherRadios(); }
+}
+
 // ───────────────────────── Compte Google (voir compte.js) ─────────────────────────
 let compteActuel = null, etatSync = "";
 function afficherCompte() {
@@ -609,6 +629,7 @@ window.echo = {
     localStorage.setItem("positions", JSON.stringify(positions)); localStorage.setItem("theme", JSON.stringify(theme));
     localStorage.setItem("maj", String(d.maj));
     appliquerTheme(); afficherRadios(); afficherPodcasts();
+    setTimeout(completerLogos, 500);
   },
   etatCompte(t) { etatSync = t; afficherCompte(); },
   compte(c) { compteActuel = c; afficherCompte(); },
@@ -621,4 +642,5 @@ afficherPodcasts();
 requestAnimationFrame(() => allerPage(0));
 window.addEventListener("resize", () => allerPage(page));
 if (!lire("accueilVu", false)) ouvrirAccueil();
+completerLogos();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
