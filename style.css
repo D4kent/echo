@@ -325,5 +325,5 @@ html.clair .halos i { opacity: .35; }
   100% { transform: scale(1); filter: blur(0); } }
 
 /* Logos des vignettes : affichés en fondu une fois validés (pas de clignotement pendant la recherche du bon logo) */
-.tuile img.logo { opacity: 0; transition: opacity .35s; }
-.tuile img.logo.pret { opacity: 1; }
+.tuile img.logo[data-radio-logo] { opacity: 0; transition: opacity .35s; }
+.tuile img.logo[data-radio-logo].pret { opacity: 1; }

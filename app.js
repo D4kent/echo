@@ -139,6 +139,7 @@ const titres = {}; // id → {titre, artiste, pochette}
 // ───── Logos vérifiés : on essaie plusieurs images et on garde la première qui est nette ─────
 function candidatsLogo(nom, logo, flux) {
   const l = [];
+  const fw = fipWeb(nom); if (fw) l.push(`logos/logo_${fw}.png`);
   if (logo) l.push(logo);
   if (annuaire) {
     const c = cleNom(nom);
@@ -151,7 +152,7 @@ function candidatsLogo(nom, logo, flux) {
 const logosOk = lire("logosOk", {});
 function imgLogo(classe, nom, liste, idRadio = "") {
   const ini = echap((nom || "?")[0]);
-  const ok = idRadio && logosOk[idRadio];
+  const ok = idRadio && !String(liste[0] || "").startsWith("logos/") && logosOk[idRadio];
   if (ok) liste = [ok, ...liste.filter((u) => u !== ok)];
   if (!liste.length) return `<div class="${classe === "logo" ? "initiale" : "ini"}">${ini}</div>`;
   return `<img class="${classe}${ok ? " pret" : ""}" src="${echap(liste[0])}" alt="" decoding="async" referrerpolicy="no-referrer"
@@ -262,8 +263,16 @@ const OFFICIELS = {
   nostalgie: { nrj: 197 }, nrj: { nrj: 158 }, cheriefm: { nrj: 190 }, cherie: { nrj: 190 }, rireetchansons: { nrj: 200 }, rirechansons: { nrj: 200 },
   europe2: { lag: ["www.europe2.fr", 1] }, rfm: { lag: ["www.rfm.fr", 1] }, ouifm: { oui: "2174546520932614531" },
 };
+// Webradios FIP : identifiant des titres Radio France et logo fourni avec l'appli
+const FIP_WEB = { fiprock: 64, fipjazz: 65, fipgroove: 66, fipmonde: 69, fipnouveautes: 70, fipreggae: 71, fipelectro: 74,
+  fipmetal: 77, fippop: 78, fiphiphop: 95, fipcultes: 709 };
+function fipWeb(nom) {
+  const k = String(nom || "").normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[^a-z]/g, "").replace(/^radio/, "").replace(/webradio/, "");
+  return FIP_WEB[k] ? k : null;
+}
 const EXTRAS = ["classics", "classic", "hits", "new", "80", "90", "2000", "best", "love", "rock", "dance", "jazz", "pop", "hiphop", "reggae", "soul", "nuit", "nouvelle", "chill", "latino", "rap"];
 function officielParNom(s) {
+  const fw = fipWeb(s.nom); if (fw) return { rf: FIP_WEB[fw] };
   for (const f of s.flux || []) { try { const id = OUI_HOTES[new URL(f).host]; if (id) return { oui: id }; } catch {} }
   const mots = String(s.nom || "").normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   if (mots.includes("nova") || mots.includes("novazz")) return { nova: "?" + s.nom };
