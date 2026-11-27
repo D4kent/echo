@@ -317,11 +317,13 @@ html.clair .halos i { opacity: .35; }
   12% { transform: scale(1.12); opacity: .9; }
   30% { transform: scale(.7); opacity: 0; filter: blur(6px); }
   42% { transform: scale(.7); opacity: 0; filter: blur(8px); animation-timing-function: cubic-bezier(.2,.8,.3,1.2); }
-  /* Réapparition : rebond de taille dans le flou, puis le logo redevient net */
-  56% { transform: scale(1.22); opacity: .75; filter: blur(7px); }
-  68% { transform: scale(.88); opacity: .9; filter: blur(5px); }
-  79% { transform: scale(1.07); opacity: 1; filter: blur(3px); }
-  89% { transform: scale(.98); filter: blur(1px); }
+  /* Réapparition : le logo revient de loin, très grand et flou, puis rebondit en taille avant de redevenir net */
+  44% { transform: scale(1.7); opacity: 0; filter: blur(14px); animation-timing-function: cubic-bezier(.3,.6,.4,1); }
+  56% { transform: scale(.72); opacity: .85; filter: blur(8px); animation-timing-function: ease-in-out; }
+  67% { transform: scale(1.22); opacity: 1; filter: blur(6px); animation-timing-function: ease-in-out; }
+  77% { transform: scale(.88); filter: blur(4px); animation-timing-function: ease-in-out; }
+  86% { transform: scale(1.06); filter: blur(2px); animation-timing-function: ease-in-out; }
+  93% { transform: scale(.98); filter: blur(.6px); }
   100% { transform: scale(1); opacity: 1; filter: blur(0); } }
 @keyframes echo-copie { 0% { transform: translateX(0) scale(1); opacity: .75; } 100% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(3px); } }
-@keyframes echo-retour { 0% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(4px); } 45% { opacity: .6; } 100% { transform: none; opacity: 0; filter: blur(6px); } }
+@keyframes echo-retour { 0% { transform: translateX(var(--dx)) scale(var(--s)); opacity: 0; filter: blur(4px); } 45% { opacity: .85; } 100% { transform: scale(.8); opacity: 0; filter: blur(6px); } }
