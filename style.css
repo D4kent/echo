@@ -237,3 +237,17 @@ html { background-color: var(--fond); } body { background: transparent; }
 @keyframes fenetre-sortie { to { opacity: 0; transform: translate(-50%, -46%) scale(.94); } }
 .voile.sortie { animation: voile-sortie .28s ease forwards; }
 @keyframes voile-sortie { to { opacity: 0; } }
+
+/* Options : barre latérale à droite, qui glisse depuis le bord */
+.panneau.fenetre.laterale { left: auto; top: 12px; bottom: 12px; right: 12px; transform: none; margin: 0;
+  width: min(440px, calc(100vw - 24px)); height: auto; padding: 0 22px; border-radius: 26px;
+  animation: lat-entree .42s cubic-bezier(.25,1.15,.4,1); }
+@keyframes lat-entree { from { transform: translateX(calc(100% + 24px)); opacity: .4; } }
+.panneau.fenetre.laterale.sortie { animation: lat-sortie .3s cubic-bezier(.55,0,.8,.35) forwards; }
+@keyframes lat-sortie { to { transform: translateX(calc(100% + 24px)); opacity: .4; } }
+.laterale .options { flex: 1; min-height: 0; align-content: start; max-width: none; padding: 4px 2px 30px; overflow-y: auto;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 calc(100% - 26px), transparent 100%); }
+.laterale .panneau-entete h2 { font-size: 24px; }
+.laterale .choix { flex-wrap: wrap; }
+.voile.leger { background: rgba(0,0,0,.25); backdrop-filter: none; } /* options : on voit le thème changer derrière */

@@ -741,7 +741,8 @@ $("#resultats").addEventListener("click", (e) => {
 // Voile sombre derrière les fenêtres (recherche, épisodes) ; un clic dessus ferme la fenêtre du dessus
 function majVoile() {
   const v = $("#voile"), reste = document.querySelector(".panneau.fenetre:not([hidden]):not(.sortie)");
-  if (reste) { v.classList.remove("sortie"); v.hidden = false; return; }
+  if (reste) { v.classList.remove("sortie"); v.hidden = false;
+    v.classList.toggle("leger", !document.querySelector(".panneau.fenetre:not(.laterale):not([hidden]):not(.sortie)")); return; }
   if (v.hidden) return;
   v.classList.add("sortie");
   setTimeout(() => { if (!document.querySelector(".panneau.fenetre:not([hidden]):not(.sortie)")) v.hidden = true; v.classList.remove("sortie"); }, 280);
