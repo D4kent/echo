@@ -905,9 +905,9 @@ completerLogos();
 chargerAnnuaire().then(() => afficherRadios()).catch(() => {});
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-// ───── Logo : au clic il part en écho et se reforme ─────
-$(".marque")?.addEventListener("click", (e) => {
-  e.preventDefault();
+// ───── Logo : au survol il part en écho et se reforme ─────
+$(".marque")?.addEventListener("click", (e) => e.preventDefault());
+$(".marque")?.addEventListener("mouseenter", (e) => {
   const m = e.currentTarget, logo = m.querySelector(".logo-echo");
   if (m.classList.contains("echo")) return;
   m.classList.add("echo");

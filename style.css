@@ -308,7 +308,7 @@ html.clair .halos i { opacity: .35; }
 .retour:active { transform: scale(.94); }
 
 /* Clic sur le logo : il part en écho (copies qui s'éloignent en s'effaçant) puis se reforme */
-.marque { cursor: pointer; }
+.marque { cursor: default; }
 .marque .fantome { position: absolute; inset: 0; pointer-events: none; }
 .marque .fantome .logo-echo { filter: none; }
 .marque.echo > .logo-echo { animation: echo-principal 1.3s cubic-bezier(.3,.7,.3,1); }
