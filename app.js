@@ -739,12 +739,23 @@ $("#resultats").addEventListener("click", (e) => {
 
 // ───────────────────────── Panneaux ─────────────────────────
 // Voile sombre derrière les fenêtres (recherche, épisodes) ; un clic dessus ferme la fenêtre du dessus
-function majVoile() { $("#voile").hidden = !document.querySelector(".panneau.fenetre:not([hidden])"); }
-function ouvrir(sel) { $(sel).hidden = false; majVoile(); }
-function fermerPanneau(p) { p.hidden = true; majVoile(); }
+function majVoile() {
+  const v = $("#voile"), reste = document.querySelector(".panneau.fenetre:not([hidden]):not(.sortie)");
+  if (reste) { v.classList.remove("sortie"); v.hidden = false; return; }
+  if (v.hidden) return;
+  v.classList.add("sortie");
+  setTimeout(() => { if (!document.querySelector(".panneau.fenetre:not([hidden]):not(.sortie)")) v.hidden = true; v.classList.remove("sortie"); }, 280);
+}
+function ouvrir(sel) { const p = $(sel); clearTimeout(p._sortie); p.classList.remove("sortie"); p.hidden = false; majVoile(); }
+function fermerPanneau(p) {
+  if (!p || p.hidden || p.classList.contains("sortie")) return;
+  if (!p.classList.contains("fenetre")) { p.hidden = true; majVoile(); return; }
+  p.classList.add("sortie"); majVoile();
+  p._sortie = setTimeout(() => { p.hidden = true; p.classList.remove("sortie"); }, 280);
+}
 document.querySelectorAll("[data-fermer]").forEach((b) => b.addEventListener("click", () => fermerPanneau(b.closest(".panneau"))));
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const l = [...document.querySelectorAll(".panneau:not([hidden])")]; if (l.length) fermerPanneau(l[l.length - 1]); } });
-$("#voile").addEventListener("click", () => { const l = [...document.querySelectorAll(".panneau.fenetre:not([hidden])")]; if (l.length) fermerPanneau(l[l.length - 1]); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { const l = [...document.querySelectorAll(".panneau:not([hidden]):not(.sortie)")]; if (l.length) fermerPanneau(l[l.length - 1]); } });
+$("#voile").addEventListener("click", () => { const l = [...document.querySelectorAll(".panneau.fenetre:not([hidden]):not(.sortie)")]; if (l.length) fermerPanneau(l[l.length - 1]); });
 $("#bouton-recherche").addEventListener("click", ouvrirRecherche);
 $("#bouton-options").addEventListener("click", () => { afficherOptions(); afficherCompte(); ouvrir("#panneau-options"); });
 $("#lecteur").addEventListener("click", (e) => { if (courant?.type === "podcast" && !e.target.closest("button,input,label")) ouvrirPodcast(courant.podcast); });

@@ -227,3 +227,13 @@ html { background-color: var(--fond); } body { background: transparent; }
   animation: fenetre .35s cubic-bezier(.3,1.25,.4,1); }
 @keyframes fenetre { from { opacity: 0; transform: translate(-50%, -46%) scale(.94); } }
 .panneau.fenetre .panneau-entete { padding-top: 18px; }
+
+/* Fondu en haut et en bas des listes dans les fenêtres, au lieu d'une coupure nette */
+.panneau.fenetre .liste { padding-top: 14px; padding-bottom: 28px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 30px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 30px), transparent 100%); }
+/* Fermeture : la même animation qu'à l'ouverture, à l'envers */
+.panneau.fenetre.sortie { animation: fenetre-sortie .28s cubic-bezier(.5,0,.75,.3) forwards; pointer-events: none; }
+@keyframes fenetre-sortie { to { opacity: 0; transform: translate(-50%, -46%) scale(.94); } }
+.voile.sortie { animation: voile-sortie .28s ease forwards; }
+@keyframes voile-sortie { to { opacity: 0; } }
