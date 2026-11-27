@@ -11,9 +11,9 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </head>
 <body>
   <div id="appli">
@@ -72,7 +72,12 @@
   <div class="panneau" id="panneau-recherche" hidden>
     <div class="panneau-entete">
       <button class="retour" data-fermer>←</button>
-      <input id="champ-recherche" placeholder="Rechercher une radio ou un podcast…" autocomplete="off">
+      <nav class="onglets mode" id="mode-recherche">
+        <div class="goutte" id="goutte-recherche"></div>
+        <button data-mode="radios" class="actif">Radios</button>
+        <button data-mode="podcasts">Podcasts</button>
+      </nav>
+      <input id="champ-recherche" placeholder="Nom d'une radio…" autocomplete="off">
     </div>
     <div class="puces" id="puces-recherche"></div>
     <div class="liste" id="resultats"></div>

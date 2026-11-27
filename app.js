@@ -107,8 +107,8 @@ $("#panneau-options").addEventListener("click", (e) => {
 let page = 0;
 function allerPage(p) {
   page = p;
-  document.querySelectorAll(".onglets button").forEach((b, i) => b.classList.toggle("actif", i === p));
-  const b = document.querySelectorAll(".onglets button")[p];
+  document.querySelectorAll("#onglets button").forEach((b, i) => b.classList.toggle("actif", i === p));
+  const b = document.querySelectorAll("#onglets button")[p];
   const g = $("#goutte"); g.style.left = b.offsetLeft + "px"; g.style.width = b.offsetWidth + "px";
   g.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.82) scaleX(1.08)" }, { transform: "scaleY(1)" }], { duration: 450 });
   document.querySelectorAll(".page").forEach((el) => (el.style.transform = `translateX(${-100 * p}%)`));
@@ -117,7 +117,7 @@ function allerPage(p) {
   $("#titre .lettre1").textContent = p === 0 ? "R" : "P";
   $("#titre-reste").innerHTML = [...mot].map((l, i) => `<span style="animation-delay:${i * 40}ms">${l}</span>`).join("");
 }
-document.querySelectorAll(".onglets button").forEach((b) => b.addEventListener("click", () => allerPage(+b.dataset.page)));
+document.querySelectorAll("#onglets button").forEach((b) => b.addEventListener("click", () => allerPage(+b.dataset.page)));
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
   if (e.key === "ArrowRight") allerPage(1); if (e.key === "ArrowLeft") allerPage(0);
@@ -390,14 +390,29 @@ async function jouerEpisode(p, e) {
 }
 
 // ───────────────────────── Recherche ─────────────────────────
-let themeRecherche = "Radios";
+// Deux recherches bien séparées : Radios ou Podcasts
+const GENRES_RADIOS = [
+  ["Populaires", null], ["Pop", "pop"], ["Rock", "rock"], ["Électro", "electronic"], ["Hip-hop", "hip hop"],
+  ["Jazz", "jazz"], ["Classique", "classical"], ["Soul & funk", "soul"], ["Années 80", "80s"], ["Info", "news"], ["Talk", "talk"],
+];
+let modeRecherche = "radios";
+let themeRecherche = "Populaires";
 function ouvrirRecherche() {
   ouvrir("#panneau-recherche"); $("#champ-recherche").value = "";
-  themeRecherche = page === 0 ? "Radios" : "Tendances";
+  choisirMode(page === 0 ? "radios" : "podcasts");
+}
+function choisirMode(m) {
+  modeRecherche = m;
+  themeRecherche = m === "radios" ? "Populaires" : "Tendances";
+  document.querySelectorAll("#mode-recherche button").forEach((b) => b.classList.toggle("actif", b.dataset.mode === m));
+  const g = $("#goutte-recherche"), b = document.querySelector(`#mode-recherche button[data-mode="${m}"]`);
+  g.style.left = b.offsetLeft + "px"; g.style.width = b.offsetWidth + "px";
+  $("#champ-recherche").placeholder = m === "radios" ? "Nom d'une radio…" : "Nom d'un podcast, d'une émission…";
   afficherPuces(); chercher();
 }
+$("#mode-recherche").addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (b) choisirMode(b.dataset.mode); });
 function afficherPuces() {
-  const noms = ["Radios", ...THEMES_PODCASTS.map((t) => t[0])];
+  const noms = (modeRecherche === "radios" ? GENRES_RADIOS : THEMES_PODCASTS).map((t) => t[0]);
   $("#puces-recherche").innerHTML = noms.map((n) => `<button class="puce ${n === themeRecherche ? "actif" : ""}" data-theme="${echap(n)}">${echap(n)}</button>`).join("");
   $("#puces-recherche .actif")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
 }
@@ -405,12 +420,16 @@ $("#puces-recherche").addEventListener("click", (e) => { const b = e.target.clos
 let minuterieRecherche;
 $("#champ-recherche").addEventListener("input", () => { clearTimeout(minuterieRecherche); minuterieRecherche = setTimeout(chercher, 400); });
 
-const serveursRB = ["de1", "de2", "fi1", "at1", "nl1"];
+const serveursRB = ["de1", "de2", "fi1", "at1", "nl1", "all"];
+let derniereErreurRB = "";
 async function radiosRB(chemin) {
   for (const s of serveursRB) {
-    try { const r = await json(`https://${s}.api.radio-browser.info/json/${chemin}`); if (Array.isArray(r) && r.length) return r; } catch {}
+    try {
+      const r = await json(`https://${s}.api.radio-browser.info/json/${chemin}`);
+      if (Array.isArray(r)) return r;
+    } catch (e) { derniereErreurRB = `${s} : ${e.message || e}`; console.warn("Annuaire radio", s, e); }
   }
-  return [];
+  throw new Error(derniereErreurRB);
 }
 function depuisItunes(o) { return o.feedUrl ? { feed: o.feedUrl, titre: o.collectionName || o.trackName, auteur: o.artistName || "", image: o.artworkUrl600 || o.artworkUrl100 } : null; }
 async function podcastsPopulaires(genre) {
@@ -427,27 +446,32 @@ async function podcastsPopulaires(genre) {
 async function chercher() {
   const q = $("#champ-recherche").value.trim();
   const zone = $("#resultats");
+  const mode = modeRecherche, theme = themeRecherche;
   zone.innerHTML = `<div class="chargement">Recherche…</div>`;
+  let html = "";
   try {
-    let html = "";
-    if (q.length >= 2) {
-      const [radios, pods] = await Promise.all([
-        radiosRB(`stations/search?name=${encodeURIComponent(q)}&limit=20&hidebroken=true&order=clickcount&reverse=true`),
-        jsonp(`https://itunes.apple.com/search?media=podcast&country=fr&limit=20&term=${encodeURIComponent(q)}`).then((d) => (d.results || []).map(depuisItunes).filter(Boolean)).catch(() => []),
-      ]);
-      html = (radios.length ? `<div class="titre-liste">Radios</div>` + lignesRadios(radios) : "") +
-        (pods.length ? `<div class="titre-liste">Podcasts</div>` + lignesPodcasts(pods) : "");
-    } else if (themeRecherche === "Radios") {
-      const radios = await radiosRB(`stations/search?countrycode=FR&limit=50&hidebroken=true&order=clickcount&reverse=true`);
-      html = radios.length ? `<div class="titre-liste">Les radios les plus écoutées en France</div>` + lignesRadios(radios)
-        : `<p class="erreur">L'annuaire des radios ne répond pas pour le moment. Réessaie dans un instant, ou tape le nom d'une radio.</p>`;
+    if (mode === "radios") {
+      const tag = GENRES_RADIOS.find((t) => t[0] === theme)?.[1];
+      const base = "limit=50&hidebroken=true&order=clickcount&reverse=true";
+      const radios = q.length >= 2 ? await radiosRB(`stations/search?name=${encodeURIComponent(q)}&${base}`)
+        : tag ? await radiosRB(`stations/search?tag=${encodeURIComponent(tag)}&countrycode=FR&${base}`)
+        : await radiosRB(`stations/search?countrycode=FR&${base}`);
+      const titre = q.length >= 2 ? "Radios trouvées" : tag ? `Radios · ${echap(theme)}` : "Les radios les plus écoutées en France";
+      html = radios.length ? `<div class="titre-liste">${titre}</div>` + lignesRadios(radios) : `<p class="doux">Aucune radio trouvée.</p>`;
     } else {
-      const g = THEMES_PODCASTS.find((t) => t[0] === themeRecherche)?.[1];
-      const pods = await podcastsPopulaires(g);
-      html = `<div class="titre-liste">${themeRecherche === "Tendances" ? "Les podcasts les plus écoutés en France" : "Les plus écoutés · " + echap(themeRecherche)}</div>` + lignesPodcasts(pods);
+      const g = THEMES_PODCASTS.find((t) => t[0] === theme)?.[1];
+      const pods = q.length >= 2
+        ? await jsonp(`https://itunes.apple.com/search?media=podcast&country=fr&limit=30&term=${encodeURIComponent(q)}`).then((d) => (d.results || []).map(depuisItunes).filter(Boolean))
+        : await podcastsPopulaires(g);
+      const titre = q.length >= 2 ? "Podcasts trouvés" : theme === "Tendances" ? "Les podcasts les plus écoutés en France" : "Les plus écoutés · " + echap(theme);
+      html = pods.length ? `<div class="titre-liste">${titre}</div>` + lignesPodcasts(pods) : `<p class="doux">Aucun podcast trouvé.</p>`;
     }
-    zone.innerHTML = html || `<p class="doux">Aucun résultat.</p>`;
-  } catch { zone.innerHTML = `<p class="erreur">Impossible de joindre l'annuaire. Vérifie ta connexion.</p>`; }
+  } catch (e) {
+    html = mode === "radios"
+      ? `<p class="erreur">L'annuaire des radios ne répond pas depuis ce navigateur.<br><small>${echap(e.message)}</small></p>`
+      : `<p class="erreur">Impossible de joindre le catalogue des podcasts. Vérifie ta connexion.</p>`;
+  }
+  if (mode === modeRecherche && theme === themeRecherche) zone.innerHTML = html;
 }
 let derniersResultats = { radios: [], pods: [] };
 function lignesRadios(radios) {
