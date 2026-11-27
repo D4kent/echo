@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Radio Francis</title>
+  <meta name="description" content="Tes radios et tes podcasts préférés, en un clic.">
+  <meta name="theme-color" content="#0F0B10">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icone-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div id="appli">
+    <header class="entete">
+      <div class="titre-zone">
+        <h1 id="titre"><span class="lettre1">R</span><span id="titre-reste">adios</span></h1>
+        <div class="eq" id="eq-entete" hidden><i></i><i></i><i></i></div>
+      </div>
+      <div class="actions">
+        <button class="bouton-rond" id="bouton-options" title="Options" aria-label="Options">
+          <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.43-2.53.04-.97-.04-.97 2.11-1.65-2-3.46-2.49 1a7.3 7.3 0 0 0-1.68-.98L15 3h-4l-.37 2.44c-.6.24-1.17.57-1.68.98l-2.49-1-2 3.46 2.11 1.65-.04.97.04.97-2.11 1.65 2 3.46 2.49-1c.51.41 1.08.74 1.68.98L11 21h4l.37-2.44c.6-.24 1.17-.57 1.68-.98l2.49 1 2-3.46-2.11-1.65Z"/></svg>
+        </button>
+        <button class="bouton-rond" id="bouton-recherche" title="Ajouter" aria-label="Rechercher">
+          <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.96 12.05l4.25 4.24-1.42 1.42-4.24-4.25A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="trait"></div>
+
+    <nav class="onglets" id="onglets">
+      <div class="goutte" id="goutte"></div>
+      <button data-page="0" class="actif">Radios</button>
+      <button data-page="1">Podcasts</button>
+    </nav>
+
+    <main class="pages" id="pages">
+      <section class="page" id="page-radios"><div class="grille" id="grille-radios"></div></section>
+      <section class="page" id="page-podcasts">
+        <div class="grille" id="grille-podcasts"></div>
+        <p class="vide" id="podcasts-vide">Aucun podcast suivi pour l'instant. Touche la loupe pour en ajouter.</p>
+      </section>
+    </main>
+
+    <footer class="lecteur" id="lecteur" hidden>
+      <img class="pochette" id="l-pochette" alt="">
+      <div class="infos">
+        <div class="l-radio" id="l-radio"></div>
+        <div class="l-titre" id="l-titre"></div>
+        <div class="progression" id="l-progression" hidden>
+          <span id="l-temps">0:00</span><input type="range" id="l-barre" min="0" max="1000" value="0"><span id="l-reste">0:00</span>
+        </div>
+      </div>
+      <div class="l-actions">
+        <button class="petit" id="l-moins15" hidden>−15</button>
+        <button class="lire" id="l-lire" aria-label="Lecture / pause"></button>
+        <button class="petit" id="l-plus30" hidden>+30</button>
+        <label class="volume" title="Volume"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4V9Zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4Z"/></svg><input type="range" id="l-volume" min="0" max="100" value="90"></label>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Panneaux -->
+  <div class="panneau" id="panneau-recherche" hidden>
+    <div class="panneau-entete">
+      <button class="retour" data-fermer>←</button>
+      <input id="champ-recherche" placeholder="Rechercher une radio ou un podcast…" autocomplete="off">
+    </div>
+    <div class="puces" id="puces-recherche"></div>
+    <div class="liste" id="resultats"></div>
+  </div>
+
+  <div class="panneau" id="panneau-podcast" hidden>
+    <div class="panneau-entete">
+      <button class="retour" data-fermer>←</button>
+      <img id="p-image" class="p-image" alt="">
+      <div class="p-titres"><h2 id="p-titre"></h2><div id="p-auteur"></div></div>
+      <button class="puce" id="p-tri">Plus récents</button>
+    </div>
+    <p class="p-desc" id="p-desc"></p>
+    <div class="liste" id="episodes"></div>
+  </div>
+
+  <div class="panneau" id="panneau-options" hidden>
+    <div class="panneau-entete"><button class="retour" data-fermer>←</button><h2>Options</h2></div>
+    <div class="options">
+      <section class="carte"><h3>Fond</h3><div class="choix" id="choix-modes"></div></section>
+      <section class="carte"><h3>Couleurs</h3><div class="choix" id="choix-couleurs"></div></section>
+      <section class="carte">
+        <h3>À propos</h3>
+        <p class="doux">Version bureau de Radio Francis. Les touches multimédia du clavier (lecture, pause) fonctionnent.
+          Certains sites de radios n'autorisent pas l'affichage du titre en cours depuis un navigateur : dans ce cas, seul le nom de la radio s'affiche.</p>
+      </section>
+    </div>
+  </div>
+
+  <audio id="audio" preload="none"></audio>
+</body>
+</html>

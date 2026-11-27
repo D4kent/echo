@@ -1,0 +1,17 @@
+{
+  "name": "Radio Francis",
+  "short_name": "Radio Francis",
+  "description": "Tes radios et tes podcasts préférés, en un clic.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0F0B10",
+  "theme_color": "#0F0B10",
+  "icons": [
+    { "src": "icons/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icone-masquable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
