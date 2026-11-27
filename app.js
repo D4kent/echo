@@ -405,9 +405,11 @@ $("#puces-recherche").addEventListener("click", (e) => { const b = e.target.clos
 let minuterieRecherche;
 $("#champ-recherche").addEventListener("input", () => { clearTimeout(minuterieRecherche); minuterieRecherche = setTimeout(chercher, 400); });
 
-const serveursRB = ["de1", "fi1", "nl1"];
+const serveursRB = ["de1", "de2", "fi1", "at1", "nl1"];
 async function radiosRB(chemin) {
-  for (const s of serveursRB) { try { return await json(`https://${s}.api.radio-browser.info/json/${chemin}`); } catch {} }
+  for (const s of serveursRB) {
+    try { const r = await json(`https://${s}.api.radio-browser.info/json/${chemin}`); if (Array.isArray(r) && r.length) return r; } catch {}
+  }
   return [];
 }
 function depuisItunes(o) { return o.feedUrl ? { feed: o.feedUrl, titre: o.collectionName || o.trackName, auteur: o.artistName || "", image: o.artworkUrl600 || o.artworkUrl100 } : null; }
@@ -436,8 +438,9 @@ async function chercher() {
       html = (radios.length ? `<div class="titre-liste">Radios</div>` + lignesRadios(radios) : "") +
         (pods.length ? `<div class="titre-liste">Podcasts</div>` + lignesPodcasts(pods) : "");
     } else if (themeRecherche === "Radios") {
-      const radios = await radiosRB(`stations/bycountrycodeexact/FR?limit=40&hidebroken=true&order=clickcount&reverse=true`);
-      html = `<div class="titre-liste">Les radios les plus écoutées en France</div>` + lignesRadios(radios);
+      const radios = await radiosRB(`stations/search?countrycode=FR&limit=50&hidebroken=true&order=clickcount&reverse=true`);
+      html = radios.length ? `<div class="titre-liste">Les radios les plus écoutées en France</div>` + lignesRadios(radios)
+        : `<p class="erreur">L'annuaire des radios ne répond pas pour le moment. Réessaie dans un instant, ou tape le nom d'une radio.</p>`;
     } else {
       const g = THEMES_PODCASTS.find((t) => t[0] === themeRecherche)?.[1];
       const pods = await podcastsPopulaires(g);
