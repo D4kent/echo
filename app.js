@@ -94,6 +94,9 @@ function appliquerTheme() {
   if (c.id === "irise") r.setProperty("--degrade", "linear-gradient(120deg,#FF1F3D,#E0218A 30%,#8B2FD8 55%,#1FB8B0 78%,#FF7A59)");
   else r.removeProperty("--degrade");
   document.documentElement.classList.toggle("clair", m.id === "clair");
+  // Le E inversé du logo prend une couleur qui tranche avec le thème
+  const froid = ["ocean", "menthe", "lagon", "ardoise"].includes(c.id);
+  r.setProperty("--e1", froid ? "#FFC23A" : "#2FE0D0"); r.setProperty("--e2", froid ? "#FF2D8A" : "#8B2FD8");
   document.querySelector('meta[name="theme-color"]').content = m.fond;
   ecrire("theme", theme);
   majLecteur();
